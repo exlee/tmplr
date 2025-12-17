@@ -1,0 +1,16 @@
+[package]
+name = "templar"
+version = "0.1.0"
+edition = "2024"
+
+# Optimize dependencies even in debug mode
+[profile.dev.package."*"]
+opt-level = 3
+
+# Disable debug info for dependencies (massive size/time win)
+[profile.dev]
+debug = 0  # or 1 for line tables only
+strip = "debuginfo"
+
+[dependencies]
+pico-args = { version = "0.5.0", features = ["eq-separator", "short-space-opt"] }
