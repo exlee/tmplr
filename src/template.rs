@@ -1,16 +1,25 @@
 use std::{
     collections::HashMap,
-    env::current_dir,
-    error::Error,
-    fs::{self, File},
+    env::{self, current_dir},
+    fs::{self},
     path::{Path, PathBuf},
     str::FromStr,
 };
 
+#[cfg(test)]
+use assert_fs::prelude;
+use pathdiff::diff_paths;
+
+use crate::{file_scanner, quit_with_error};
+
+pub const EXTENSION: &str = "tmplr";
+pub const OPEN: &str = "{###";
+pub const CLOSE: &str = "###}";
+
 #[derive(Clone, Debug)]
 pub enum Node {
     Dir(PathBuf),
-    File { path: PathBuf, content: String },
+    File { path: String, content: String },
 }
 type Template = Vec<Node>;
 
@@ -19,23 +28,15 @@ struct TemplateContext {
     filters: HashMap<String, fn(&str) -> String>,
 }
 
+#[derive(Debug)]
 pub struct TemplateRequest {
     path: PathBuf,
-    instance_name: String,
     context: HashMap<String, String>,
 }
 
 impl TemplateRequest {
-    pub fn make(
-        path: PathBuf,
-        instance_name: String,
-        context: HashMap<String, String>,
-    ) -> TemplateRequest {
-        TemplateRequest {
-            path,
-            instance_name,
-            context,
-        }
+    pub fn make(path: PathBuf, context: HashMap<String, String>) -> TemplateRequest {
+        TemplateRequest { path, context }
     }
 }
 
@@ -81,17 +82,10 @@ pub fn render(template: &str, ctx: &HashMap<String, String>) -> String {
     output
 }
 
-const FILE_START: &str = "FILE";
-const FILE_END: &str = "END_FILE";
-const DIR_PREFIX: &str = "DIR";
-
 pub fn read_template(path: &Path) -> Result<Template, String> {
     let mut result: Template = Vec::new();
     let mut cursor = 0;
     let mut current_node: Option<Node> = None;
-
-    const OPEN: &str = "{###";
-    const CLOSE: &str = "###}";
 
     fn push_output(s: &str, current_node: &mut Option<Node>) {
         if let Some(Node::File { content, .. }) = current_node {
@@ -99,7 +93,10 @@ pub fn read_template(path: &Path) -> Result<Template, String> {
         }
     }
 
-    let file_string = fs::read_to_string(path).unwrap_or("Can't read file".to_string());
+    let file_string = fs::read_to_string(path)
+        .or_else(|_| fs::read_to_string(get_config_dir().join(path)))
+        .or_else(|_| fs::read_to_string(get_config_dir().join(path).with_added_extension("tmplr")))
+        .map_err(|_| "Can't read file".to_string())?;
 
     while let Some(start_offset) = file_string[cursor..].find(OPEN) {
         let tag_start = cursor + start_offset;
@@ -119,18 +116,24 @@ pub fn read_template(path: &Path) -> Result<Template, String> {
             match cmd.to_uppercase().as_str() {
                 "DIR" => {
                     let file_path = validate_path_string(params)?;
+                    //let file_path = file_path.canonicalize().map_err(|err| err.to_string())?;
                     let new_dir = Node::Dir(file_path);
                     result.push(new_dir);
                 }
                 "FILE" => {
-                    if let Some(node) = current_node {
+                    if let Some(node) = current_node.clone() {
                         result.push(node);
                     }
-                    let file_path = validate_path_string(params)?;
-                    current_node = Some(Node::File {
-                        path: file_path,
-                        content: String::new(),
-                    })
+
+                    if let Ok(path) = validate_path_string(params) {
+                        let file_path = path
+                            .to_str()
+                            .ok_or(String::from("Can't convert FILE path to string"))?;
+                        current_node = Some(Node::File {
+                            path: file_path.into(),
+                            content: String::new(),
+                        });
+                    };
                 }
                 _ => {
                     eprintln!("Unknown command: {}", cmd);
@@ -145,30 +148,30 @@ pub fn read_template(path: &Path) -> Result<Template, String> {
     }
     push_output(&file_string[cursor..], &mut current_node);
     if let Some(node) = current_node {
-      result.push(node);
+        result.push(node);
     }
     Ok(result)
 }
-fn validate_path(target_root: &Path, relative_path: &Path) -> Result<PathBuf, String> {
-    let joined = target_root.join(relative_path);
-    let canonical_root = target_root.canonicalize().map_err(|e| e.to_string())?;
+pub fn validate_path_string(str_path: &str) -> Result<PathBuf, String> {
+    let curdir = current_dir().map_err(|_| "Can't get current dir")?;
+    let pathbuf_result = PathBuf::from_str(str_path);
+    let pathbuf: PathBuf = pathbuf_result.map_err(|_| "Not a path")?;
+    let path = pathbuf.as_path();
+    validate_path(curdir.as_path(), path)
+}
 
-    if relative_path
+pub fn validate_path(target_root: &Path, relative_path: &Path) -> Result<PathBuf, String> {
+    let joined = target_root.join(relative_path);
+    //let canonical_root = joined.canonicalize().map_err(|e| e.to_string())?;
+
+    if joined
         .components()
         .any(|c| matches!(c, std::path::Component::ParentDir))
     {
         return Err("Target reaches outside parent directory".into());
     };
 
-    Ok(joined)
-}
-
-fn validate_path_string(str_path: &str) -> Result<PathBuf, String> {
-    let curdir = current_dir().map_err(|_| "Can't get current dir")?;
-    let pathbuf_result = PathBuf::from_str(str_path);
-    let pathbuf: PathBuf = pathbuf_result.map_err(|_| "Not a path")?;
-    let path = pathbuf.as_path();
-    validate_path(curdir.as_path(), path)
+    Ok(relative_path.to_path_buf())
 }
 
 pub(crate) fn make(request: TemplateRequest) {
@@ -180,19 +183,84 @@ pub(crate) fn make(request: TemplateRequest) {
     for entity in template_entities {
         match entity {
             Node::File { path, content } => render_to_file(&path, &content, &request.context),
-            Node::Dir(path) => create_directory(path),
+            Node::Dir(path) => _ = fs::create_dir_all(path),
         }
     }
 }
 
-fn create_directory(path: PathBuf) {
-    println!("Create Directory: {}", path.to_string_lossy());
-    //todo!()
+fn render_to_file(path_str: &str, content: &str, context: &HashMap<String, String>) {
+    let err_quit = |_| {
+        quit_with_error(1, "Invalid path in template definition".into());
+        unreachable!();
+    };
+    let content = render(content, context);
+    let path_str = render(path_str, context);
+    let pathbuf = validate_path_string(path_str.as_str()).unwrap_or_else(err_quit);
+    if let Some(parent_dir) = pathbuf.parent() {
+        _ = fs::create_dir_all(parent_dir);
+    }
+    eprintln!("Path: {}", path_str);
+    eprint!("{}", content);
+    assert!(fs::write(pathbuf.as_path(), content).is_ok());
 }
 
-fn render_to_file(path: &PathBuf, content: &String, context: &HashMap<String, String>) {
-    let result = render(content, context);
-    println!("Path: {}", path.to_string_lossy());
-    print!("{}", result);
-    // write_to_file(path, content);
+fn get_config_dir() -> PathBuf {
+    if let Ok(path) = env::var("XDG_CONFIG_HOME") {
+        return PathBuf::from(path).join("tmplr");
+    }
+
+    if let Ok(path) = env::var("HOME") {
+        return PathBuf::from(path).join(".config").join("tmplr");
+    }
+
+    PathBuf::from(".")
+}
+
+pub fn list_templates_relative(path: &Path) -> Vec<PathBuf> {
+    file_scanner::FileScanner::new_with_extension(path, EXTENSION.into())
+        .flatten()
+        .map(|p| diff_paths(&p, path).unwrap_or(p))
+        .collect()
+}
+
+pub fn templates_dir() -> PathBuf {
+    get_config_dir()
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_fs::prelude::*;
+    use predicates::prelude::*;
+
+    #[test]
+    fn can_list_templates() -> Result<(), Box<dyn std::error::Error>> {
+        let template_dir = assert_fs::TempDir::new()?;
+
+        _ = template_dir.child("t1").child("ex1.tmplr").touch();
+        _ = template_dir.child("t1").child("ex2.tmplr").touch();
+        _ = template_dir.child("ex3.tmplr").touch();
+        _ = template_dir.child("t2").child("ex4.tmplr").touch();
+        _ = template_dir
+            .child("t2")
+            .child("sub")
+            .child("ex5.tmplr")
+            .touch();
+        _ = template_dir
+            .child("t2")
+            .child("sub")
+            .child("ex6.tmplr")
+            .touch();
+
+        let templates = list_templates_relative(template_dir.path());
+        assert_eq!(templates.len(), 6);
+
+        let templates_str = templates.iter().map(|p| p.to_str().unwrap());
+
+        let predicate_iterator = predicate::in_iter(templates_str);
+
+        assert!(predicate_iterator.eval("ex3.tmplr"));
+        assert!(predicate_iterator.eval("t2/sub/ex6.tmplr"));
+
+        Ok(())
+    }
 }

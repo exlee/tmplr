@@ -1,0 +1,128 @@
+use pathdiff::diff_paths;
+use std::fmt::Write;
+use std::{fs, path::PathBuf};
+
+use crate::{
+    empty_dir_scanner, file_scanner, quit_with_error,
+    template::{self, EXTENSION, Node},
+};
+
+pub fn create_template(pathbuf: PathBuf, name: String) {
+    if create_template_impl(pathbuf, name).is_none() {
+        quit_with_error(1, "Error template crash".into());
+        unreachable!();
+    }
+}
+fn create_template_impl(pathbuf: PathBuf, name: String) -> Option<()> {
+    let files_iter = file_scanner::FileScanner::new(&pathbuf);
+    let empty_dirs_iter = empty_dir_scanner::EmptyDirScanner::new(&pathbuf);
+    let mut result = String::with_capacity(16 * 1024);
+
+    let open = template::OPEN;
+    let close = template::CLOSE;
+
+    for dir in empty_dirs_iter.flatten() {
+        let dir_pathbuf = dir.clone();
+        let relative = diff_paths(&dir_pathbuf, &pathbuf)?;
+        let path_str = relative.to_str()?;
+        let new_node = create_dir_node(path_str, name.clone());
+        if let Node::Dir(path) = new_node {
+            let relative = diff_paths(&path, &pathbuf)?;
+            let path_str = relative.to_str()?;
+            writeln!(result, "{open} DIR {path_str} {close}").unwrap()
+        }
+    }
+
+    for file in files_iter.flatten() {
+        let file = file.clone();
+        let file_path: &str = file.to_str()?;
+        let new_node = create_node(file_path, name.clone());
+        match new_node {
+            Node::File { path, content } => {
+                let relative = diff_paths(&path, &pathbuf)?;
+                let path_str = relative.to_str()?;
+                writeln!(result, "{open} FILE {path_str} {close}").unwrap();
+                result.push_str(&content);
+                result.push('\n');
+            }
+
+            Node::Dir(path) => {
+                let relative = diff_paths(&path, &pathbuf)?;
+                let path_str = relative.to_str()?;
+                writeln!(result, "{open} DIR {path_str} {close}").unwrap()
+            }
+        }
+    }
+    let mut filename: String = String::new();
+    filename.push_str(name.as_str());
+    filename.push('.');
+    filename.push_str(EXTENSION);
+
+    println!("{}", result);
+
+    _ = fs::write(filename, result);
+
+    Some(())
+}
+pub fn create_dir_node(path: &str, name: String) -> Node {
+    let path = replace_word_bounded(path, &name, "{{ name }}");
+    let pathbuf = template::validate_path_string(path.as_str()).expect("Path error");
+
+    Node::Dir(pathbuf)
+}
+pub fn create_node(path: &str, name: String) -> Node {
+    let pathbuf = PathBuf::from(path);
+    let Ok(content) = fs::read_to_string(pathbuf) else {
+        quit_with_error(
+            1,
+            format!("Can't read file for template creation: {}", path,),
+        );
+        unreachable!();
+    };
+
+    let content = replace_word_bounded(&content, &name, "{{ name }}");
+    let path = replace_word_bounded(path, &name, "{{ name }}");
+
+    Node::File { path, content }
+}
+
+fn replace_word_bounded(input: &str, target: &str, replacement: &str) -> String {
+    let mut output = String::with_capacity(input.len());
+    let mut last_idx = 0;
+
+    let crash_during_replacement = || {
+        quit_with_error(1, "Error during replacing string".into());
+        unreachable!()
+    };
+
+    for (start, _part) in input.match_indices(target) {
+        let boundary_start = if start == 0 {
+            true
+        } else {
+            let prev_char = input
+                .chars()
+                .nth(start - 1)
+                .unwrap_or_else(crash_during_replacement);
+            !prev_char.is_alphanumeric()
+        };
+
+        let end = start + target.len();
+        let boundary_end = if end == input.len() {
+            true
+        } else {
+            let next_char = input
+                .chars()
+                .nth(end)
+                .unwrap_or_else(crash_during_replacement);
+            !next_char.is_alphanumeric()
+        };
+
+        if boundary_start && boundary_end {
+            output.push_str(&input[last_idx..start]);
+            output.push_str(replacement);
+            last_idx = end;
+        }
+    }
+    output.push_str(&input[last_idx..]);
+    output
+}
