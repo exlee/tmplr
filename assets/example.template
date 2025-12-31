@@ -1,9 +1,0 @@
-{### DIR src ###}
-{### FILE src/main.rs ###}
-fn main() {
-    println!("Hello, {{ project_name | upper }}!");
-}
-{### FILE README.md ###}
-Hello, this is {{ project_name }}
-
-{### DIR tests ###}

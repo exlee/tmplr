@@ -1,4 +1,4 @@
-use assert_cmd::{Command, assert::AssertResult, cargo};
+use assert_cmd::Command;
 use assert_fs::prelude::*;
 use predicates::prelude::*;
 

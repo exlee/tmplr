@@ -135,7 +135,7 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
 }
 
 fn print_help_and_exit(code: i32) {
-    print!("{}", HELP);
+    println!("{}", HELP.trim());
     std::process::exit(code);
 }
 
@@ -146,8 +146,14 @@ fn quit_with_error(code: i32, err: String) {
 
 
 const HELP: &str = "
-tmpl
-  make   <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
-  create <TEMPLATE_FILE> <NAME>
-  list   List available templates
+tmplr
+
+	https://github.com/exlee/tmplr
+	A simple template instantiation utility.
+
+Usage:
+
+	make   <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
+	create <TEMPLATE_FILE> <NAME>
+	list   List available templates
 ";
