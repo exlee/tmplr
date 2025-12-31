@@ -19,6 +19,7 @@ opt-level = "z"
 lto = true
 codegen-units=1
 panic = "abort"
+
 [dependencies]
 pathdiff = "0.2.3"
 pico-args = { version = "0.5.0", features = ["eq-separator", "short-space-opt"] }

@@ -6,8 +6,6 @@ use std::{
     str::FromStr,
 };
 
-#[cfg(test)]
-use assert_fs::prelude;
 use pathdiff::diff_paths;
 
 use crate::{file_scanner, quit_with_error};
@@ -22,11 +20,6 @@ pub enum Node {
     File { path: String, content: String },
 }
 type Template = Vec<Node>;
-
-struct TemplateContext {
-    vars: HashMap<String, String>,
-    filters: HashMap<String, fn(&str) -> String>,
-}
 
 #[derive(Debug)]
 pub struct TemplateRequest {
@@ -199,8 +192,9 @@ fn render_to_file(path_str: &str, content: &str, context: &HashMap<String, Strin
     if let Some(parent_dir) = pathbuf.parent() {
         _ = fs::create_dir_all(parent_dir);
     }
+    let content = content.trim();
     eprintln!("Path: {}", path_str);
-    eprint!("{}", content);
+    eprintln!("{}", content);
     assert!(fs::write(pathbuf.as_path(), content).is_ok());
 }
 

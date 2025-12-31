@@ -1,9 +1,14 @@
 use std::{
     collections::HashMap,
-    env::{self, current_dir},
     path::{PathBuf},
+};
+
+#[cfg(debug_assertions)]
+use std::{
+    env::current_dir,
     str::FromStr,
 };
+
 
 mod file_scanner;
 mod empty_dir_scanner;
@@ -61,6 +66,7 @@ fn run_list() {
     println!("- {}", tmpl_file.to_string_lossy());
   }
 }
+#[cfg(debug_assertions)]
 fn run_debug(_args: &AppArgs) {
     let example = PathBuf::from_str("assets/example.template").unwrap();
     let template = template::read_template(example.as_path());

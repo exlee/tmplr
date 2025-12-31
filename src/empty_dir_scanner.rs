@@ -1,5 +1,4 @@
 use std::{
-    ffi::OsStr,
     fs::{self, ReadDir},
     io,
     path::{Path, PathBuf},
@@ -11,7 +10,6 @@ pub struct EmptyDirScanner {
     current_dir: Option<ReadDir>,
     current_empty: bool,
     current_path: Option<PathBuf>,
-    search_root: PathBuf,
 }
 
 impl EmptyDirScanner {
@@ -22,7 +20,6 @@ impl EmptyDirScanner {
             current_dir: None,
             current_empty: true,
             current_path: None,
-            search_root: pathbuf.canonicalize().unwrap(),
             
         }
     }
@@ -52,7 +49,6 @@ impl Iterator for EmptyDirScanner {
 
 
                         return Some(Ok(dir));
-                        self.current_dir = None;
                       }
                     }
                 }
