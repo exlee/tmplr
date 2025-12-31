@@ -1,6 +1,6 @@
 # tmplr
 
-stemple (Silly TEMPLAte utility) is a heavy in size (whoa those Haskell binaries) but simple in use utility to kickstart any file from `.tmplr` format.
+tmplr (pronounced "templar") is a small and simple utility to kickstart any file from `.tmplr` format:
 ```
 tmplr
 
@@ -41,44 +41,44 @@ Such file doesn't provide that much benefit, so you can add any variable in doub
 This variable can be both in filename and in file content, e.g. `example1.tmplr`:
 
 ```
-{### FILE hello_{{name}}.txt ###}
-Hello, dear {{name}}!
+{### FILE hello_{{ name }}.txt ###}
+Hello, dear {{ name }}!
 ```
 
 There is no template functions or anything whatsoever. Only simple substitution!
-
-*IMPORTANT: There can be NO SPACES between braces and variable name.*
 
 ### CLI
 
 Once you have your .tmplr you can simply:
 
 ```
-stemple do /path/to/example1.tmplr John
+tmplr make /path/to/example1.tmplr John
 ```
 
 which would create `hello_John.txt` with `Hello, dear John!` in the current directory.
 
 Note that:
 - 2nd positional (name), always have to be present, even if there is no `{{name}}` in the template!
-- remaining arguments should be provided in `key=value` form, e.g. `stemple /path/to/some.tmplr MyFile a=1 b=9`
+- remaining arguments should be provided in `key=value` form, e.g. `tmplr /path/to/some.tmplr MyFile a=1 b=9`
 
 ### Templates directory
 
-If you run `stemple list` you'll get (probably empty) listing of your local templates directory along with a line indicating where your template directory is (_spoiler alert: XDGConfig directory_).
+If you run `tmplr list` you'll get (probably empty) listing of your local templates directory along with a line indicating where your template directory is (_spoiler alert: XDGConfig directory_).
 
 E.g. for me it's:
 ```
-[~]> stemple list
-Templates in: /Users/xlii/.config/stemple
+[~]> tmplr list
+Listing template dir: /Users/xlii/.config/tmplr
 - script.tmplr
 ```
 
-This "script" is a `script.tmplr` template that I can use to easily produce files from this template using a simple `stemple script MyScriptName` command.
+This "script" is a `script.tmplr` template that I can use to easily produce files from this template using a simple `tmplr script MyScriptName` command.
 
 ## TODO
 
 - Add feedback regarding creation of the templates
 - Add current tmplr version
 - Add "preview" command for templates
-- Add own templates into dir
+- Add own templates as examples
+- Add filters for variables (upper/lower)
+- Add special variables (for creating things based on paths, e.g. for Elixir `alpha/bravo/charlie/delta.ex` would be `defmodule Alpha.Bravo.Charlie.Delta`)
