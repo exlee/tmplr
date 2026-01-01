@@ -82,4 +82,3 @@ This "script" is a `script.tmplr` template that I can use to easily produce file
 - Add own templates as examples
 - Add filters for variables (upper/lower)
 - Add special variables (for creating things based on paths, e.g. for Elixir `alpha/bravo/charlie/delta.ex` would be `defmodule Alpha.Bravo.Charlie.Delta`)
-- Change `tmplr preview` to `tmplr make -n/--dry-run` as it's easier to swap after checking the contents

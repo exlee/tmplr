@@ -1,0 +1,15 @@
+{### FILE {{name}}_tool.cue ###}
+package main
+
+import (
+	"tool/file"
+)
+
+command: {{name}}: {
+	for k, v in files {
+		"\(k)": file.Create & {
+			filename: k
+			contents: v.contents
+		}
+	}
+}

@@ -8,7 +8,7 @@ use std::{
 
 use pathdiff::diff_paths;
 
-use crate::{file_scanner, quit_with_error};
+use crate::file_scanner;
 
 pub const EXTENSION: &str = "tmplr";
 pub const OPEN: &str = "{###";

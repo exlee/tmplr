@@ -1,0 +1,38 @@
+CUE Generator for Pikchr files
+
+It allows to have Pikchr diagrams that are more structured.
+
+{### FILE {{name}}_tool.cue ###}
+package main
+
+import (
+  "tool/file"
+  "strings"
+)
+
+obsidian: "{{obsidian_path}}"
+#PikchrMd: {
+  pikchr:   string
+  contents: """
+    ```pikchr
+    margin=4pt
+    fill=white
+    \(pikchr)
+    ```
+    """
+}
+files: "\(obsidian)/{{name}}.md": {
+  #PikchrMd
+  pikchr: """
+  box "Hello"
+  """
+}
+
+command: diagrams: {
+  for k, v in files {
+    "\(k)": file.Create & {
+      filename: k
+      contents: v.contents
+    }
+  }
+}

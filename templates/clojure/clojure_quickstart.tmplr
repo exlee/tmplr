@@ -1,0 +1,34 @@
+{### FILE {{name}}/test/{{name}}/main_test.clj ###}
+(ns {{name}}.main-test)
+
+(require '[clojure.test :refer [deftest is]]
+         '[{{name}}.main :as {{name}}])
+
+(deftest hello
+  (is (= ({{name}}/hello) "World") "Sanity check"))
+
+{### FILE {{name}}/deps.edn ###}
+{:paths ["src" "test"]
+ :deps {org.clojure/tools.namespace {:mvn/version "1.5.0"}}}
+
+{### FILE {{name}}/Makefile ###}
+.PHONY:: test test-watch
+test:
+	@clj -M -e "(require 'clojure.test) (require '{{name}}.main-test) (clojure.test/run-tests '{{name}}.main-test)"
+
+test-watch:
+	@fd -e clj | entr -r -c -- gmake test --no-print-dir
+
+repl:
+	rlwrap clojure
+
+{### FILE {{name}}/src/{{name}}/main.clj ###}
+(ns {{name}}.main)
+
+(defn hello [] "World")
+
+
+{### FILE {{name}}/src/user.clj ###}
+(ns user
+  (:use {{name}}.main)
+  (:use [clojure.tools.namespace.repl :only (refresh)]))

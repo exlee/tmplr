@@ -1,0 +1,27 @@
+{### FILE {{name}}.hs ###}
+#!/usr/bin/env stack
+{- stack script
+   --resolver nightly-2025-11-21
+   --package pretty-simple
+   --package shelly
+   --package text
+   --package mainland-pretty
+-}
+
+{-# LANGUAGE OverloadedStrings #-}
+import           Control.Monad
+import qualified Data.List                 as L
+import qualified Data.Text                 as T
+import           Debug.Trace               as D
+import           Shelly
+import           Text.Pretty.Simple
+import           Text.PrettyPrint.Mainland
+
+main :: IO ()
+main = shelly $ silently $ run "echo" ["hello"] >>= pPrint
+
+{### FILE .project ###}
+{### FILE cabal.project ###}
+{### FILE hie.yaml ###}
+cradle:
+  stack:
