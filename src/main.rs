@@ -25,6 +25,7 @@ enum AppArgs {
     Make {
         template_path: PathBuf,
         variables: HashMap<String, String>,
+        dry_run: bool,
     },
   	#[cfg(debug_assertions)]
     Debug,
@@ -43,9 +44,11 @@ pub fn main() {
         AppArgs::Make {
             template_path,
             variables,
+            dry_run,
         } => template::make(template::TemplateRequest::make(
             template_path,
             variables,
+            dry_run,
         )),
         AppArgs::List => run_list(),
         AppArgs::Create{path, name} => gen_template::create_template(path, name),
@@ -94,7 +97,7 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
     match subcommand.to_lowercase().as_str() {
       	#[cfg(debug_assertions)]
         "dbg" => Ok(AppArgs::Debug {}),
-        "make" => {
+        cmd_str @ ("make" | "preview") => {
             let template_path: PathBuf = pargs.free_from_str()?;
             let instance_name: String = pargs.free_from_str()?;
             let mut ctx: HashMap<String, String> = HashMap::new();
@@ -112,9 +115,11 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
 
             ctx.insert("name".into(), instance_name);
 
+
             let cmd = AppArgs::Make {
                 template_path,
                 variables: ctx,
+                dry_run: cmd_str == "preview",
             };
 
             Ok(cmd)
@@ -153,7 +158,8 @@ tmplr
 
 Usage:
 
-	make   <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
-	create <TEMPLATE_FILE> <NAME>
-	list   List available templates
+	make    <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
+	create  <TEMPLATE_FILE> <NAME>
+	preview Preview template
+	list    List available templates
 ";

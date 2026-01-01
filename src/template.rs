@@ -25,11 +25,16 @@ type Template = Vec<Node>;
 pub struct TemplateRequest {
     path: PathBuf,
     context: HashMap<String, String>,
+    dry_run: bool,
 }
 
 impl TemplateRequest {
-    pub fn make(path: PathBuf, context: HashMap<String, String>) -> TemplateRequest {
-        TemplateRequest { path, context }
+    pub fn make(path: PathBuf, context: HashMap<String, String>, dry_run: bool) -> TemplateRequest {
+        TemplateRequest {
+            path,
+            context,
+            dry_run,
+        }
     }
 }
 
@@ -173,14 +178,33 @@ pub(crate) fn make(request: TemplateRequest) {
         eprintln!("Error: {}", template_result.unwrap_err());
         return;
     };
-    for entity in template_entities {
-        match entity {
-            Node::File { path, content } => render_to_file(&path, &content, &request.context),
-            Node::Dir(path) => _ = fs::create_dir_all(path),
+
+    if request.dry_run {
+        // Dry Run
+        for entity in template_entities {
+            match entity {
+                Node::File { path, content } => preview_file(&path, &content, &request.context),
+                Node::Dir(path) => println!("\n{{### DIR {} ###}}", path.to_str().unwrap()),
+            }
+        }
+    } else {
+        // Materialize
+        for entity in template_entities {
+            match entity {
+                Node::File { path, content } => render_to_file(&path, &content, &request.context),
+                Node::Dir(path) => _ = fs::create_dir_all(path),
+            }
         }
     }
 }
 
+fn preview_file(path_str: &str, content: &str, context: &HashMap<String, String>) {
+    let content = render(content, context);
+    let path_str = render(path_str, context);
+    let content = content.trim();
+    println!("\n{{### FILE {} ###}}", path_str);
+    println!("{}", content);
+}
 fn render_to_file(path_str: &str, content: &str, context: &HashMap<String, String>) {
     let err_quit = |_| {
         quit_with_error(1, "Invalid path in template definition".into());
