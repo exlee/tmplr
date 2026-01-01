@@ -98,10 +98,13 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
     match subcommand.to_lowercase().as_str() {
       	#[cfg(debug_assertions)]
         "dbg" => Ok(AppArgs::Debug {}),
-        cmd_str @ ("make" | "preview") => {
+        "make" => {
+            let dry_run = pargs.contains(["-n", "--dry-run"]);
             let template_path: PathBuf = pargs.free_from_str()?;
             let instance_name: String = pargs.free_from_str()?;
+
             let mut ctx: HashMap<String, String> = HashMap::new();
+
 
             for var in pargs.finish() {
                 let str: String = var.into_string().unwrap_or("".into());
@@ -117,10 +120,12 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
             ctx.insert("name".into(), instance_name);
 
 
+
+
             let cmd = AppArgs::Make {
                 template_path,
                 variables: ctx,
-                dry_run: cmd_str == "preview",
+                dry_run: dry_run,
             };
 
             Ok(cmd)
@@ -160,7 +165,10 @@ tmplr
 Usage:
 
 	make    <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
+
+	        --dry-run/-n	don't materialize, only output to stdout
+
 	create  <TEMPLATE_FILE> <NAME>
-	preview Preview template
+
 	list    List available templates
 ";

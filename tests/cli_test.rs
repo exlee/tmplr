@@ -56,7 +56,10 @@ This is contents of dir2/file.txt
         .arg("TEST_BASIC")
         .current_dir(&unroll_dir)
         .assert()
-        .success();
+        .success()
+        .stdout(predicates::str::contains("Creating dir: dir1"))
+        .stdout(predicates::str::contains("Writing: file_TEST_BASIC.txt"))
+        .stdout(predicates::str::contains("Writing: dir2/file.txt"));
 
     unroll_dir.child("dir1").assert(predicate::path::is_dir());
 
@@ -313,7 +316,7 @@ fn list_shows_template_dir() -> TestResult {
 }
 
 #[test]
-fn previews_basic_template() -> TestResult {
+fn previews_basic_template_long_flag() -> TestResult {
     let template_dir = assert_fs::TempDir::new()?;
     let unroll_dir = assert_fs::TempDir::new()?;
 
@@ -329,9 +332,54 @@ This is contents of dir2/file.txt
     );
 
     let mut cmd = Command::new(COMMAND);
-    cmd.arg("preview")
+    cmd.arg("make")
         .arg(template_path.path())
         .arg("TEST_BASIC")
+        .arg("--dry-run")
+        .current_dir(&unroll_dir)
+        .assert()
+        .success()
+      	.stdout(predicate::str::contains("{### DIR dir1 ###}"))
+      	.stdout(predicate::str::contains("{### FILE file_TEST_BASIC.txt ###}"))
+      	.stdout(predicate::str::contains("Hello TEST_BASIC"));
+
+
+    unroll_dir.child("dir1").assert(predicate::path::is_dir().not());
+
+    unroll_dir.child("dir2").assert(predicate::path::is_dir().not());
+
+    unroll_dir
+        .child("dir2/file.txt")
+        .assert(predicate::path::exists().not());
+
+    unroll_dir
+        .child("file_TEST_BASIC.txt")
+        .assert(predicate::path::exists().not());
+    Ok(())
+}
+
+
+#[test]
+fn previews_basic_template_short_flag() -> TestResult {
+    let template_dir = assert_fs::TempDir::new()?;
+    let unroll_dir = assert_fs::TempDir::new()?;
+
+    let template_path = template_dir.child("some.tmplr");
+    _ = template_path.write_str(
+        r#"
+{### DIR dir1 ###}
+{### FILE file_{{name}}.txt ###}
+Hello {{name}}
+{### FILE dir2/file.txt ###}
+This is contents of dir2/file.txt
+"#,
+    );
+
+    let mut cmd = Command::new(COMMAND);
+    cmd.arg("make")
+        .arg(template_path.path())
+        .arg("TEST_BASIC")
+        .arg("-n")
         .current_dir(&unroll_dir)
         .assert()
         .success()

@@ -57,8 +57,7 @@ fn render_to_file(path_str: &str, content: &str, context: &HashMap<String, Strin
         _ = fs::create_dir_all(parent_dir);
     }
     let content = content.trim();
-    eprintln!("Path: {}", path_str);
-    eprintln!("{}", content);
+    println!("Writing: {}", path_str);
     assert!(fs::write(pathbuf.as_path(), content).is_ok());
 }
 
@@ -82,7 +81,10 @@ pub(crate) fn make(request: TemplateRequest) {
         for entity in template_entities {
             match entity {
                 Node::File { path, content } => render_to_file(&path, &content, &request.context),
-                Node::Dir(path) => _ = fs::create_dir_all(path),
+                Node::Dir(path) => {
+                  println!("Creating dir: {}", path.to_str().expect("Can't create dir"));
+                  _ = fs::create_dir_all(path);
+                }
             }
         }
     }
