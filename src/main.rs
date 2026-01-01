@@ -14,6 +14,7 @@ mod file_scanner;
 mod empty_dir_scanner;
 mod template;
 mod gen_template;
+mod render_template;
 
 #[derive(Debug)]
 enum AppArgs {
@@ -45,7 +46,7 @@ pub fn main() {
             template_path,
             variables,
             dry_run,
-        } => template::make(template::TemplateRequest::make(
+        } => render_template::make(template::TemplateRequest::make(
             template_path,
             variables,
             dry_run,
@@ -78,7 +79,7 @@ fn run_debug(_args: &AppArgs) {
     for node in template.as_ref().unwrap() {
         if let template::Node::File { path, content } = node {
             println!("{}", path);
-            println!("{}", template::render(content, &ctx));
+            println!("{}", render_template::render(content, &ctx));
         }
     }
 
