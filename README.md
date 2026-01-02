@@ -1,6 +1,31 @@
 # tmplr
+Zero-friction project scaffolding for your terminal.
 
-tmplr (pronounced "templar") is a small and simple utility to kickstart any file from `.tmplr` format:
+tmplr (pronounced "templar") turns a single text file into a complex directory structure. It's a lightweight, logic-free alternative to heavy tools like Cookiecutter. No python dependencies, no complex configuration—just simple substitution.
+
+## Why tmplr?
+Single Source of Truth: Define multiple files and directories in one readable .tmplr file.
+Dead Simple: No logic loops or complex functions. Just {{ variable }} substitution.
+Fast: Written in Rust for instant execution.
+
+# Quick Start
+1. Create a template (script.tmplr)
+```plain
+{### FILE {{name}}.sh ###}
+#!/bin/bash
+echo "Running {{name}}..."
+```
+
+2. Run it
+
+```bash
+tmplr make script.tmplr MyScript
+```
+
+3. Result: A new file `MyScript.sh` is created instantly.
+
+# CLI Help
+
 ```
 tmplr
 
@@ -9,23 +34,27 @@ tmplr
 
 Usage:
 
-	make   <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
-	create <TEMPLATE_FILE> <NAME>
-	list   List available templates
+	make    <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
+
+	       --dry-run/-n	don't materialize, only output to stdout
+
+	create  <TEMPLATE_FILE> <NAME>
+
+	list    List available templates
 ```
 
-## Installation
+# Installation
 
 ```
 git clone git@github.com:exlee/tmplr.git
 cargo install --path .
 ```
 
-Or download [binary built by CI](https://github.com/exlee/tmplr/tags)
+Or download [binary built by CI](https://github.com/exlee/tmplr/releases)
 
-## Usage
+# Usage (extended)
 
-### .tmplr files
+## .tmplr files
 
 In order to start, you need to have a `.tmplr` file. It's syntax is simple and is similar to format of [txtar ](https://pkg.go.dev/golang.org/x/tools/txtar#hdr-Txtar_format). For example `example0.tmplr` could look like this:
 
@@ -47,7 +76,7 @@ Hello, dear {{ name }}!
 
 There is no template functions or anything whatsoever. Only simple substitution!
 
-### CLI
+## CLI
 
 Once you have your .tmplr you can simply:
 
@@ -61,7 +90,7 @@ Note that:
 - 2nd positional (name), always have to be present, even if there is no `{{name}}` in the template!
 - remaining arguments should be provided in `key=value` form, e.g. `tmplr /path/to/some.tmplr MyFile a=1 b=9`
 
-### Templates directory
+## Templates directory
 
 If you run `tmplr list` you'll get (probably empty) listing of your local templates directory along with a line indicating where your template directory is (_spoiler alert: XDGConfig directory_).
 
@@ -74,7 +103,7 @@ Listing template dir: /Users/xlii/.config/tmplr
 
 This "script" is a `script.tmplr` template that I can use to easily produce files from this template using a simple `tmplr script MyScriptName` command.
 
-## TODO
+# TODO
 
 - Add feedback regarding creation of the templates
 - Add current tmplr version
