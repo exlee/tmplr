@@ -9,6 +9,8 @@ use std::{
     str::FromStr,
 };
 
+use pathdiff::diff_paths;
+
 
 mod file_scanner;
 mod empty_dir_scanner;
@@ -21,6 +23,11 @@ enum AppArgs {
     List,
     Create {
       path: PathBuf,
+      name: String,
+    },
+    CreateFromFiles {
+      path: PathBuf,
+      files: Vec<PathBuf>,
       name: String,
     },
     Make {
@@ -53,6 +60,7 @@ pub fn main() {
         )),
         AppArgs::List => run_list(),
         AppArgs::Create{path, name} => gen_template::create_template(path, name),
+        AppArgs::CreateFromFiles{path,files, name} => gen_template::create_template_from_files(path,files, name),
     }
 }
 
@@ -120,8 +128,6 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
             ctx.insert("name".into(), instance_name);
 
 
-
-
             let cmd = AppArgs::Make {
                 template_path,
                 variables: ctx,
@@ -132,14 +138,33 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
         }
         "create" => {
           let name: String = pargs.free_from_str()?;
-          let working_dir: Option<String> = pargs
+          let listed_files_only = pargs.contains("--files");
+          let working_dir: String = pargs
             .opt_value_from_str("--change-dir")?
             .or_else(|| pargs.opt_value_from_str("-C").expect("Can't unwrap"))
-            .or(Some(String::from(".")));
+            .or(Some(String::from("."))).unwrap();
+
+          if listed_files_only {
+            let mut files: Vec<PathBuf> = Vec::new();
+            for var in pargs.finish() {
+              let pathbuf = PathBuf::from(var);
+              if !pathbuf.exists()  {
+                continue;
+              }
+              files.push(pathbuf);
+            }
+            Ok(AppArgs::CreateFromFiles{
+              path: PathBuf::from(working_dir),
+              files,
+              name,
+            })
+          } else {
           Ok(AppArgs::Create{
-            path: PathBuf::from(working_dir.unwrap()),
+            path: PathBuf::from(working_dir),
             name,
           })
+          }
+
         },
         "list" => Ok(AppArgs::List),
         _ => {
@@ -175,6 +200,7 @@ Usage:
 	create  <TEMPLATE_FILE> <NAME>
 
 	        -C/--change-dir <DIR>	change directory before creating template
+	        --files	only read files listed in args
 
 	list    List available templates
 ";

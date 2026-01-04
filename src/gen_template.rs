@@ -1,5 +1,7 @@
 use pathdiff::diff_paths;
 use std::fmt::Write;
+use std::io;
+use std::result::Iter;
 use std::{fs, path::PathBuf};
 
 use crate::{
@@ -13,15 +15,30 @@ pub fn create_template(pathbuf: PathBuf, name: String) {
         unreachable!();
     }
 }
+pub fn create_template_from_files(path: PathBuf, entries: Vec<PathBuf>, name: String) {
+  create_template_generic(path, name, entries.into_iter().map(Ok), vec![].into_iter());
+}
 fn create_template_impl(pathbuf: PathBuf, name: String) -> Option<()> {
     let files_iter = file_scanner::FileScanner::new(&pathbuf);
     let empty_dirs_iter = empty_dir_scanner::EmptyDirScanner::new(&pathbuf);
-    let mut result = String::with_capacity(16 * 1024);
+    create_template_generic(pathbuf, name, files_iter, empty_dirs_iter)
+}
+
+fn create_template_generic<T,R>(
+    pathbuf: PathBuf,
+    name: String,
+    files: T,
+    dirs: R,
+) -> Option<()>
+where T: Iterator<Item = io::Result<PathBuf>>,
+      R: Iterator<Item = io::Result<PathBuf>>
+{
+    let mut result = String::with_capacity(128 * 1024);
 
     let open = template::OPEN;
     let close = template::CLOSE;
 
-    for dir in empty_dirs_iter.flatten() {
+    for dir in dirs.flatten() {
         let dir_pathbuf = dir.clone();
         let relative = diff_paths(&dir_pathbuf, &pathbuf)?;
         let path_str = relative.to_str()?;
@@ -33,7 +50,7 @@ fn create_template_impl(pathbuf: PathBuf, name: String) -> Option<()> {
         }
     }
 
-    for file in files_iter.flatten() {
+    for file in files.flatten() {
         let file = file.clone();
         let file_path: &str = file.to_str()?;
         let new_node = create_node(file_path, name.clone());
@@ -64,6 +81,7 @@ fn create_template_impl(pathbuf: PathBuf, name: String) -> Option<()> {
 
     Some(())
 }
+
 pub fn create_dir_node(path: &str, name: String) -> Node {
     let path = replace_word_bounded(path, &name, "{{ name }}");
     let pathbuf = template::validate_path_string(path.as_str()).expect("Path error");
