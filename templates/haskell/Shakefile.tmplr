@@ -1,0 +1,39 @@
+{### FILE Shakefile.hs ###}
+#!/usr/bin/env stack
+{- stack script
+--snapshot nightly-2025-11-21
+--package pretty-simple
+--package shake
+--package text
+--package mainland-pretty
+-}
+
+{-# LANGUAGE OverloadedStrings #-}
+import           Control.Monad
+import qualified Data.List                  as L
+import qualified Data.Text                  as T
+import           Debug.Trace                as D
+import           Text.Pretty.Simple
+import           Text.PrettyPrint.Mainland
+
+import           Development.Shake
+import           Development.Shake.Command
+import           Development.Shake.FilePath
+import           Development.Shake.Util
+
+main :: IO ()
+main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
+    --want ["sample" <.> "txt"]
+
+    phony "info" $ do
+        putInfo "I'm info!"
+    "sample.txt" %> \out -> do
+      liftIO $ writeFile out "Hello World"
+
+
+
+{### FILE cabal.project ###}
+
+{### FILE hie.yaml ###}
+cradle:
+  stack:
