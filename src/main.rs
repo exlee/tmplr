@@ -9,7 +9,6 @@ use std::{
     str::FromStr,
 };
 
-use pathdiff::diff_paths;
 
 
 mod file_scanner;
@@ -186,7 +185,7 @@ fn quit_with_error(code: i32, err: String) {
 
 
 const HELP: &str = "
-tmplr
+tmplr (v0.0.3)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.
@@ -195,12 +194,12 @@ Usage:
 
 	make    <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
 
-	        --dry-run/-n	don't materialize, only output to stdout
+	        --dry-run/-n	don't materialize, only print to stdout
 
 	create  <TEMPLATE_FILE> <NAME>
 
 	        -C/--change-dir <DIR>	change directory before creating template
-	        --files	only read files listed in args
+	        --files              	only read files listed in args
 
 	list    List available templates
 ";

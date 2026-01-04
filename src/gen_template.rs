@@ -1,7 +1,6 @@
 use pathdiff::diff_paths;
 use std::fmt::Write;
 use std::io;
-use std::result::Iter;
 use std::{fs, path::PathBuf};
 
 use crate::{
