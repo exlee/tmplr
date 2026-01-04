@@ -236,6 +236,29 @@ fn create_template_with_dirs() -> TestResult {
 }
 
 #[test]
+fn create_template_change_dir() -> TestResult {
+    let template_dir = assert_fs::TempDir::new()?;
+
+    _ = template_dir.child("ROOT").child("dir1").child("file.txt").write_str("Content: TEST");
+
+    let mut cmd = Command::new(COMMAND);
+
+    cmd.arg("create")
+        .arg("TEST")
+        .arg("-C")
+        .arg("ROOT")
+        .current_dir(&template_dir)
+        .assert()
+        .success();
+
+    template_dir
+        .child("TEST.tmplr")
+        .assert(predicate::path::exists())
+        .assert(predicate::str::contains("Content: {{ name }}")) 
+        .assert(predicate::str::contains("{### FILE dir1/file.txt ###}"));
+    Ok(())
+}
+#[test]
 fn unrolls_template_from_templates_dir_nested() -> TestResult {
     let template_dir = assert_fs::TempDir::new()?;
     let unroll_dir = assert_fs::TempDir::new()?;

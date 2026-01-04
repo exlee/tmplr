@@ -132,8 +132,12 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
         }
         "create" => {
           let name: String = pargs.free_from_str()?;
+          let working_dir: Option<String> = pargs
+            .opt_value_from_str("--change-dir")?
+            .or_else(|| pargs.opt_value_from_str("-C").expect("Can't unwrap"))
+            .or(Some(String::from(".")));
           Ok(AppArgs::Create{
-            path: PathBuf::from("."),
+            path: PathBuf::from(working_dir.unwrap()),
             name,
           })
         },
@@ -169,6 +173,8 @@ Usage:
 	        --dry-run/-n	don't materialize, only output to stdout
 
 	create  <TEMPLATE_FILE> <NAME>
+
+	        -C/--change-dir <DIR>	change directory before creating template
 
 	list    List available templates
 ";
