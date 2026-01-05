@@ -27,7 +27,7 @@ tmplr make script.tmplr MyScript
 # CLI Help
 
 ```
-tmplr (v0.0.3)
+tmplr (v0.0.5)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.
@@ -36,12 +36,18 @@ Usage:
 
 	make    <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
 
+	        Instantiate template. Partial names supported
+	        for local templates.
+
 	        --dry-run/-n	don't materialize, only print to stdout
 
 	create  <TEMPLATE_FILE> <NAME>
 
+	        Create new template.
+
 	        -C/--change-dir <DIR>	change directory before creating template
 	        --files              	only read files listed in args
+	        --simple             	don't replace file contents
 
 	list    List available templates
 ```
@@ -110,9 +116,10 @@ This "script" is a `script.tmplr` template that I can use to easily produce file
 
 - [ ] Add filters for variables (upper/lower)
 - [ ] Add "append" command (for inserting data in existing file)
-- [ ] Add partial matching upon creation
+- [ ] Make listing nicer
 - [ ] Add special variables (for creating things based on paths, e.g. for Elixir `alpha/bravo/charlie/delta.ex` would be `defmodule Alpha.Bravo.Charlie.Delta`)
 - [ ] Add feedback during creation of the templates
 - [x] ~Add current tmplr version~
 - [x] ~Add own templates as examples~
 - [x] ~Add "preview" command for templates~
+- [x] ~Add partial matching upon creation~
