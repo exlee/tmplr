@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs};
 
-use crate::{quit_with_error, template::{Node, TemplateRequest, read_template, validate_path_string}};
+use crate::{MakeArgs, quit_with_error, template::{Node, read_template, validate_path_string}};
 
 
 pub fn render(template: &str, ctx: &HashMap<String, String>) -> String {
@@ -61,18 +61,18 @@ fn render_to_file(path_str: &str, content: &str, context: &HashMap<String, Strin
     assert!(fs::write(pathbuf.as_path(), content).is_ok());
 }
 
-pub(crate) fn make(request: TemplateRequest) {
-    let template_result = read_template(&request.path);
+pub(crate) fn make(args: &MakeArgs) {
+    let template_result = read_template(&args.template_path);
     let Ok(template_entities) = template_result else {
         eprintln!("Error: {}", template_result.unwrap_err());
         return;
     };
 
-    if request.dry_run {
+    if args.dry_run {
         // Dry Run
         for entity in template_entities {
             match entity {
-                Node::File { path, content } => preview_file(&path, &content, &request.context),
+                Node::File { path, content } => preview_file(&path, &content, &args.variables),
                 Node::Dir(path) => println!("\n{{### DIR {} ###}}", path.to_str().unwrap()),
             }
         }
@@ -80,7 +80,7 @@ pub(crate) fn make(request: TemplateRequest) {
         // Materialize
         for entity in template_entities {
             match entity {
-                Node::File { path, content } => render_to_file(&path, &content, &request.context),
+                Node::File { path, content } => render_to_file(&path, &content, &args.variables),
                 Node::Dir(path) => {
                   println!("Creating dir: {}", path.to_str().expect("Can't create dir"));
                   _ = fs::create_dir_all(path);

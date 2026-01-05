@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     env::{self, current_dir},
     fs::{self},
     path::{Path, PathBuf},
@@ -20,23 +19,6 @@ pub enum Node {
     File { path: String, content: String },
 }
 type Template = Vec<Node>;
-
-#[derive(Debug)]
-pub struct TemplateRequest {
-    pub(crate) path: PathBuf,
-    pub(crate) context: HashMap<String, String>,
-    pub(crate) dry_run: bool,
-}
-
-impl TemplateRequest {
-    pub fn make(path: PathBuf, context: HashMap<String, String>, dry_run: bool) -> TemplateRequest {
-        TemplateRequest {
-            path,
-            context,
-            dry_run,
-        }
-    }
-}
 
 pub fn read_template(path: &Path) -> Result<Template, String> {
     let mut result: Template = Vec::new();

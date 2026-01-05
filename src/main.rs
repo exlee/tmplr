@@ -17,25 +17,25 @@ mod template;
 mod gen_template;
 mod render_template;
 
+
+#[derive(Debug)]
+struct CreateArgs {
+      path: PathBuf,
+      name: String,
+      files: Option<Vec<PathBuf>>,
+      no_replace: bool,
+}
+#[derive(Debug)]
+struct MakeArgs {
+      template_path: PathBuf,
+      variables: HashMap<String, String>,
+      dry_run: bool,
+}
 #[derive(Debug)]
 enum AppArgs {
     List,
-    Create {
-      path: PathBuf,
-      name: String,
-      no_replace: bool,
-    },
-    CreateFromFiles {
-      path: PathBuf,
-      files: Vec<PathBuf>,
-      name: String,
-      no_replace: bool
-    },
-    Make {
-        template_path: PathBuf,
-        variables: HashMap<String, String>,
-        dry_run: bool,
-    },
+    Create(CreateArgs),
+    Make(MakeArgs),
   	#[cfg(debug_assertions)]
     Debug,
 }
@@ -50,18 +50,9 @@ pub fn main() {
     match args {
       	#[cfg(debug_assertions)]
         AppArgs::Debug => run_debug(&args),
-        AppArgs::Make {
-            template_path,
-            variables,
-            dry_run,
-        } => render_template::make(template::TemplateRequest::make(
-            template_path,
-            variables,
-            dry_run,
-        )),
+        AppArgs::Make(make_args) => render_template::make(&make_args),
         AppArgs::List => run_list(),
-        AppArgs::Create{path, name, no_replace} => gen_template::create_template(path, name, no_replace),
-        AppArgs::CreateFromFiles{path,files, name, no_replace} => gen_template::create_template_from_files(path,files, name, no_replace),
+        AppArgs::Create(create_args) => gen_template::create_template(&create_args),
     }
 }
 
@@ -95,7 +86,13 @@ fn run_debug(_args: &AppArgs) {
     for f in file_scanner::FileScanner::new_with_extension(current_dir().unwrap(), "rs".into()) {
         println!("{:?}", f);
     }
-    gen_template::create_template(PathBuf::from("src"), "main".into(), false);
+    let create_args = CreateArgs {
+      path: PathBuf::from("src"),
+      name: "main".into(),
+      no_replace: false,
+      files: None
+    };
+    gen_template::create_template(&create_args);
 }
 fn parse_args() -> Result<AppArgs, pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
@@ -129,11 +126,11 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
             ctx.insert("name".into(), instance_name);
 
 
-            let cmd = AppArgs::Make {
+            let cmd = AppArgs::Make(MakeArgs{
                 template_path,
                 variables: ctx,
-                dry_run: dry_run,
-            };
+                dry_run,
+            });
 
             Ok(cmd)
         }
@@ -155,18 +152,19 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
               }
               files.push(pathbuf);
             }
-            Ok(AppArgs::CreateFromFiles{
+            Ok(AppArgs::Create(CreateArgs{
               path: PathBuf::from(working_dir),
-              files,
+              files: Some(files),
               name,
               no_replace,
-            })
+            }))
           } else {
-          Ok(AppArgs::Create{
+          Ok(AppArgs::Create(CreateArgs{
             path: PathBuf::from(working_dir),
             name,
+            files: None,
             no_replace,
-          })
+          }))
           }
 
         },
