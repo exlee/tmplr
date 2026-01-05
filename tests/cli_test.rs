@@ -285,6 +285,29 @@ fn create_template_only_matching() -> TestResult {
     Ok(())
 }
 #[test]
+fn create_template_simple_flag() -> TestResult {
+    let template_dir = assert_fs::TempDir::new()?;
+
+    _ = template_dir.child("file1.txt").write_str("Content: TEST");
+    _ = template_dir.child("TEST.txt").write_str("Content: TEST");
+
+    let mut cmd = Command::new(COMMAND);
+
+    cmd.arg("create")
+        .arg("TEST")
+        .arg("--simple")
+        .current_dir(&template_dir)
+        .assert()
+        .success();
+
+    template_dir
+        .child("TEST.tmplr")
+        .assert(predicate::path::exists())
+        .assert(predicate::str::contains("Content: TEST"))
+        .assert(predicate::str::contains("{### FILE TEST.txt ###}"));
+    Ok(())
+}
+#[test]
 fn create_template_only_matching_and_working_dir() -> TestResult {
     let template_dir = assert_fs::TempDir::new()?;
 

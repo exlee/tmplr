@@ -23,11 +23,13 @@ enum AppArgs {
     Create {
       path: PathBuf,
       name: String,
+      no_replace: bool,
     },
     CreateFromFiles {
       path: PathBuf,
       files: Vec<PathBuf>,
       name: String,
+      no_replace: bool
     },
     Make {
         template_path: PathBuf,
@@ -58,8 +60,8 @@ pub fn main() {
             dry_run,
         )),
         AppArgs::List => run_list(),
-        AppArgs::Create{path, name} => gen_template::create_template(path, name),
-        AppArgs::CreateFromFiles{path,files, name} => gen_template::create_template_from_files(path,files, name),
+        AppArgs::Create{path, name, no_replace} => gen_template::create_template(path, name, no_replace),
+        AppArgs::CreateFromFiles{path,files, name, no_replace} => gen_template::create_template_from_files(path,files, name, no_replace),
     }
 }
 
@@ -93,7 +95,7 @@ fn run_debug(_args: &AppArgs) {
     for f in file_scanner::FileScanner::new_with_extension(current_dir().unwrap(), "rs".into()) {
         println!("{:?}", f);
     }
-    gen_template::create_template(PathBuf::from("src"), "main".into());
+    gen_template::create_template(PathBuf::from("src"), "main".into(), false);
 }
 fn parse_args() -> Result<AppArgs, pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
@@ -138,6 +140,7 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
         "create" => {
           let name: String = pargs.free_from_str()?;
           let listed_files_only = pargs.contains("--files");
+          let no_replace = pargs.contains("--simple");
           let working_dir: String = pargs
             .opt_value_from_str("--change-dir")?
             .or_else(|| pargs.opt_value_from_str("-C").expect("Can't unwrap"))
@@ -156,11 +159,13 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
               path: PathBuf::from(working_dir),
               files,
               name,
+              no_replace,
             })
           } else {
           Ok(AppArgs::Create{
             path: PathBuf::from(working_dir),
             name,
+            no_replace,
           })
           }
 
@@ -185,7 +190,7 @@ fn quit_with_error(code: i32, err: String) {
 
 
 const HELP: &str = "
-tmplr (v0.0.3)
+tmplr (v0.0.4)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.
@@ -200,6 +205,7 @@ Usage:
 
 	        -C/--change-dir <DIR>	change directory before creating template
 	        --files              	only read files listed in args
+	        --simple             	don't replace file contents
 
 	list    List available templates
 ";

@@ -8,19 +8,19 @@ use crate::{
     template::{self, EXTENSION, Node},
 };
 
-pub fn create_template(pathbuf: PathBuf, name: String) {
-    if create_template_impl(pathbuf, name).is_none() {
+pub fn create_template(pathbuf: PathBuf, name: String, no_replace: bool) {
+    if create_template_impl(pathbuf, name, no_replace).is_none() {
         quit_with_error(1, "Error template crash".into());
         unreachable!();
     }
 }
-pub fn create_template_from_files(path: PathBuf, entries: Vec<PathBuf>, name: String) {
-  create_template_generic(path, name, entries.into_iter().map(Ok), vec![].into_iter());
+pub fn create_template_from_files(path: PathBuf, entries: Vec<PathBuf>, name: String, no_replace: bool) {
+  create_template_generic(path, name, entries.into_iter().map(Ok), vec![].into_iter(), no_replace);
 }
-fn create_template_impl(pathbuf: PathBuf, name: String) -> Option<()> {
+fn create_template_impl(pathbuf: PathBuf, name: String, no_replace: bool) -> Option<()> {
     let files_iter = file_scanner::FileScanner::new(&pathbuf);
     let empty_dirs_iter = empty_dir_scanner::EmptyDirScanner::new(&pathbuf);
-    create_template_generic(pathbuf, name, files_iter, empty_dirs_iter)
+    create_template_generic(pathbuf, name, files_iter, empty_dirs_iter, no_replace)
 }
 
 fn create_template_generic<T,R>(
@@ -28,6 +28,7 @@ fn create_template_generic<T,R>(
     name: String,
     files: T,
     dirs: R,
+    no_replace: bool,
 ) -> Option<()>
 where T: Iterator<Item = io::Result<PathBuf>>,
       R: Iterator<Item = io::Result<PathBuf>>
@@ -41,7 +42,7 @@ where T: Iterator<Item = io::Result<PathBuf>>,
         let dir_pathbuf = dir.clone();
         let relative = diff_paths(&dir_pathbuf, &pathbuf)?;
         let path_str = relative.to_str()?;
-        let new_node = create_dir_node(path_str, name.clone());
+        let new_node = create_dir_node(path_str, name.clone(), no_replace);
         if let Node::Dir(path) = new_node {
             let relative = diff_paths(&path, &pathbuf)?;
             let path_str = relative.to_str()?;
@@ -52,7 +53,7 @@ where T: Iterator<Item = io::Result<PathBuf>>,
     for file in files.flatten() {
         let file = file.clone();
         let file_path: &str = file.to_str()?;
-        let new_node = create_node(file_path, name.clone());
+        let new_node = create_node(file_path, name.clone(), no_replace);
         match new_node {
             Node::File { path, content } => {
                 let relative = diff_paths(&path, &pathbuf)?;
@@ -81,13 +82,18 @@ where T: Iterator<Item = io::Result<PathBuf>>,
     Some(())
 }
 
-pub fn create_dir_node(path: &str, name: String) -> Node {
-    let path = replace_word_bounded(path, &name, "{{ name }}");
-    let pathbuf = template::validate_path_string(path.as_str()).expect("Path error");
+pub fn create_dir_node(path: &str, name: String, no_replace: bool) -> Node {
+  	if no_replace {
+      let pathbuf = template::validate_path_string(path).expect("Path error");
+      Node::Dir(pathbuf)
+  	} else {
+      let path = replace_word_bounded(path, &name, "{{ name }}");
+      let pathbuf = template::validate_path_string(path.as_str()).expect("Path error");
 
-    Node::Dir(pathbuf)
+      Node::Dir(pathbuf)
+  	}
 }
-pub fn create_node(path: &str, name: String) -> Node {
+pub fn create_node(path: &str, name: String, no_replace: bool) -> Node {
     let pathbuf = PathBuf::from(path);
     let Ok(content) = fs::read_to_string(pathbuf) else {
         quit_with_error(
@@ -97,10 +103,15 @@ pub fn create_node(path: &str, name: String) -> Node {
         unreachable!();
     };
 
-    let content = replace_word_bounded(&content, &name, "{{ name }}");
-    let path = replace_word_bounded(path, &name, "{{ name }}");
+		if no_replace {
+  		let path_str = String::from(path);
+      Node::File { path: path_str, content }
+		} else {
+      let content = replace_word_bounded(&content, &name, "{{ name }}");
+      let path = replace_word_bounded(path, &name, "{{ name }}");
 
-    Node::File { path, content }
+      Node::File { path, content }
+		}
 }
 
 fn replace_word_bounded(input: &str, target: &str, replacement: &str) -> String {
