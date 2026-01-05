@@ -109,6 +109,8 @@ This "script" is a `script.tmplr` template that I can use to easily produce file
 # TODO
 
 - [ ] Add filters for variables (upper/lower)
+- [ ] Add "append" command (for inserting data in existing file)
+- [ ] Add partial matching upon creation
 - [ ] Add special variables (for creating things based on paths, e.g. for Elixir `alpha/bravo/charlie/delta.ex` would be `defmodule Alpha.Bravo.Charlie.Delta`)
 - [ ] Add feedback during creation of the templates
 - [x] ~Add current tmplr version~
