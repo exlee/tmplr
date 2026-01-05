@@ -1,6 +1,8 @@
 use std::{
     env::{self, current_dir},
+    fmt::Write,
     fs::{self},
+    io,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -20,7 +22,7 @@ pub enum Node {
 }
 type Template = Vec<Node>;
 
-pub fn read_template(path: &Path) -> Result<Template, String> {
+pub fn read_template(path: &Path) -> io::Result<Template> {
     let mut result: Template = Vec::new();
     let mut cursor = 0;
     let mut current_node: Option<Node> = None;
@@ -34,7 +36,7 @@ pub fn read_template(path: &Path) -> Result<Template, String> {
     let file_string = fs::read_to_string(path)
         .or_else(|_| fs::read_to_string(get_config_dir().join(path)))
         .or_else(|_| fs::read_to_string(get_config_dir().join(path).with_added_extension("tmplr")))
-        .map_err(|_| "Can't read file".to_string())?;
+        .or_else(|_| read_partial_matched_template(path))?;
 
     while let Some(start_offset) = file_string[cursor..].find(OPEN) {
         let tag_start = cursor + start_offset;
@@ -66,7 +68,7 @@ pub fn read_template(path: &Path) -> Result<Template, String> {
                     if let Ok(path) = validate_path_string(params) {
                         let file_path = path
                             .to_str()
-                            .ok_or(String::from("Can't convert FILE path to string"))?;
+                            .ok_or(other_err("Can't convert FILE path to string"))?;
                         current_node = Some(Node::File {
                             path: file_path.into(),
                             content: String::new(),
@@ -90,15 +92,42 @@ pub fn read_template(path: &Path) -> Result<Template, String> {
     }
     Ok(result)
 }
-pub fn validate_path_string(str_path: &str) -> Result<PathBuf, String> {
-    let curdir = current_dir().map_err(|_| "Can't get current dir")?;
+
+fn read_partial_matched_template(path: &Path) -> io::Result<String> {
+    let input_path = path.to_string_lossy().to_string();
+    let config_dir = get_config_dir();
+    let all_templates = list_templates_relative(&config_dir);
+
+    let mut filtered: Vec<String> = all_templates
+        .into_iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .filter(|pstr| pstr.contains(&input_path))
+        .collect();
+
+    if filtered.len() > 1 {
+        let mut error_msg = String::new();
+        let _ = writeln!(error_msg, "Multiple templates matched input string");
+        for item in filtered {
+            let _ = writeln!(error_msg, "- {}", item);
+        }
+        return err(&error_msg);
+    }
+    let m = filtered
+        .pop()
+        .ok_or_else(|| io::Error::other("Template not found"))?;
+    println!("Expanding: {}", m);
+    fs::read_to_string(config_dir.join(m))
+}
+
+pub fn validate_path_string(str_path: &str) -> io::Result<PathBuf> {
+    let curdir = current_dir().map_err(|_| other_err("Can't get current dir"))?;
     let pathbuf_result = PathBuf::from_str(str_path);
-    let pathbuf: PathBuf = pathbuf_result.map_err(|_| "Not a path")?;
+    let pathbuf: PathBuf = pathbuf_result.map_err(|_| other_err("Not a path"))?;
     let path = pathbuf.as_path();
     validate_path(curdir.as_path(), path)
 }
 
-pub fn validate_path(target_root: &Path, relative_path: &Path) -> Result<PathBuf, String> {
+pub fn validate_path(target_root: &Path, relative_path: &Path) -> io::Result<PathBuf> {
     let joined = target_root.join(relative_path);
     //let canonical_root = joined.canonicalize().map_err(|e| e.to_string())?;
 
@@ -106,7 +135,7 @@ pub fn validate_path(target_root: &Path, relative_path: &Path) -> Result<PathBuf
         .components()
         .any(|c| matches!(c, std::path::Component::ParentDir))
     {
-        return Err("Target reaches outside parent directory".into());
+        return err("Target reaches outside parent directory");
     };
 
     Ok(relative_path.to_path_buf())
@@ -133,6 +162,12 @@ pub fn list_templates_relative(path: &Path) -> Vec<PathBuf> {
 
 pub fn templates_dir() -> PathBuf {
     get_config_dir()
+}
+fn err<T>(err: &str) -> io::Result<T> {
+    return Err(io::Error::other(err));
+}
+fn other_err(err: &str) -> io::Error {
+    return io::Error::other(err);
 }
 
 #[cfg(test)]
