@@ -27,7 +27,7 @@ tmplr make script.tmplr MyScript
 # CLI Help
 
 ```
-tmplr (v0.0.5)
+tmplr (v0.0.6)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.
@@ -85,6 +85,24 @@ Hello, dear {{ name }}!
 
 There is no template functions or anything whatsoever. Only simple substitution!
 
+### Section Types
+
+`.tmplr` files use specific headers to define how files are generated.
+
+* **Preamble (Comments)**
+    Any text appearing before the first section header is treated as a comment. Use this space to document your template.
+
+* `{### FILE path/to/name ###}`
+    **Overwrites** the target file. If the file exists, its content is completely replaced by the template content.
+
+* `{### EXT path/to/name ###}`
+    **Appends** to the target file.
+    * It checks for duplicates: content is only appended if it is not already present.
+    * If the file does not exist, it behaves exactly like `FILE`.
+
+* `{### DIR path/to/dir ###}`
+    **Creates an empty directory**. This section does not support content/body text.### .tmplr sections
+
 ## CLI
 
 Once you have your .tmplr you can simply:
@@ -114,12 +132,12 @@ This "script" is a `script.tmplr` template that I can use to easily produce file
 
 # TODO
 
-- [ ] Add filters for variables (upper/lower)
-- [ ] Add "append" command (for inserting data in existing file)
 - [ ] Make listing nicer
+- [ ] Add filters for variables (upper/lower)
 - [ ] Add special variables (for creating things based on paths, e.g. for Elixir `alpha/bravo/charlie/delta.ex` would be `defmodule Alpha.Bravo.Charlie.Delta`)
 - [ ] Add feedback during creation of the templates
 - [x] ~Add current tmplr version~
 - [x] ~Add own templates as examples~
 - [x] ~Add "preview" command for templates~
 - [x] ~Add partial matching upon creation~
+- [x] ~Add "append" command (for inserting data in existing file)~
