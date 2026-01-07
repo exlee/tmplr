@@ -9,7 +9,8 @@ use std::{
 
 use pathdiff::diff_paths;
 
-use crate::file_scanner;
+use crate::{error_handling::quit_with_error, file_scanner};
+use crate::error_handling::OkOrIoOther;
 
 pub const EXTENSION: &str = "tmplr";
 pub const OPEN: &str = "{###";
@@ -19,6 +20,7 @@ pub const CLOSE: &str = "###}";
 pub enum Node {
     Dir(PathBuf),
     File { path: String, content: String },
+    Ext { path: String, content: String },
 }
 type Template = Vec<Node>;
 
@@ -28,8 +30,17 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
     let mut current_node: Option<Node> = None;
 
     fn push_output(s: &str, current_node: &mut Option<Node>) {
-        if let Some(Node::File { content, .. }) = current_node {
-            content.push_str(s);
+        match current_node {
+            None => (),
+            Some(Node::File {content, ..}) | Some(Node::Ext {content, ..}) => content.push_str(s),
+            Some(Node::Dir { .. }) => quit_with_error(256, "Dir node shouldn't be current one"),
+        }
+    }
+
+    fn push_current_node(current_node: &mut Option<Node>, result: &mut Template) {
+        if let Some(node) = current_node.clone() {
+            result.push(node);
+            *current_node = None;
         }
     }
 
@@ -55,21 +66,30 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
 
             match cmd.to_uppercase().as_str() {
                 "DIR" => {
+                    push_current_node(&mut current_node, &mut result);
                     let file_path = validate_path_string(params)?;
-                    //let file_path = file_path.canonicalize().map_err(|err| err.to_string())?;
                     let new_dir = Node::Dir(file_path);
                     result.push(new_dir);
                 }
                 "FILE" => {
-                    if let Some(node) = current_node.clone() {
-                        result.push(node);
-                    }
-
+                    push_current_node(&mut current_node, &mut result);
                     if let Ok(path) = validate_path_string(params) {
                         let file_path = path
                             .to_str()
-                            .ok_or(other_err("Can't convert FILE path to string"))?;
+                            .ok_or_ioerror("Can't convert FILE path to string")?;
                         current_node = Some(Node::File {
+                            path: file_path.into(),
+                            content: String::new(),
+                        });
+                    };
+                }
+                "EXT" => {
+                    push_current_node(&mut current_node, &mut result);
+                    if let Ok(path) = validate_path_string(params) {
+                        let file_path = path
+                            .to_str()
+                            .ok_or_ioerror("Can't convert EXT path to string")?;
+                        current_node = Some(Node::Ext{
                             path: file_path.into(),
                             content: String::new(),
                         });

@@ -1,7 +1,10 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fmt::Write, fs::{self}};
 
-use crate::{MakeArgs, quit_with_error, template::{Node, read_template, validate_path_string}};
-
+use crate::{
+    MakeArgs,
+    error_handling::UnwrapQuit,
+    template::{Node, read_template, validate_path_string},
+};
 
 pub fn render(template: &str, ctx: &HashMap<String, String>) -> String {
     let mut output = String::with_capacity(template.len());
@@ -46,19 +49,46 @@ pub fn render(template: &str, ctx: &HashMap<String, String>) -> String {
 }
 
 fn render_to_file(path_str: &str, content: &str, context: &HashMap<String, String>) {
-    let err_quit = |_| {
-        quit_with_error(1, "Invalid path in template definition".into());
-        unreachable!();
-    };
     let content = render(content, context);
     let path_str = render(path_str, context);
-    let pathbuf = validate_path_string(path_str.as_str()).unwrap_or_else(err_quit);
+    let pathbuf =
+        validate_path_string(path_str.as_str()).unwrap_or_quit(1, "Invalid template definition");
     if let Some(parent_dir) = pathbuf.parent() {
         _ = fs::create_dir_all(parent_dir);
     }
     let content = content.trim();
     println!("Writing: {}", path_str);
     assert!(fs::write(pathbuf.as_path(), content).is_ok());
+}
+fn render_or_extend(path_str: &str, content: &str, context: &HashMap<String, String>) {
+    let content = render(content, context);
+    let path_str = render(path_str, context);
+    let pathbuf =
+        validate_path_string(path_str.as_str()).unwrap_or_quit(1, "Invalid template definition");
+    let content = content.trim();
+
+    if pathbuf.exists() {
+        let existing_content =
+            std::fs::read_to_string(&pathbuf).unwrap_or_quit(2, "Can't read file for extension");
+        if existing_content.contains(content) {
+            eprintln!(
+                "WARN: {} already contains identical content, not extending!",
+                pathbuf.to_string_lossy()
+            );
+            return;
+        }
+        let mut new_content = String::new();
+        let _ = new_content.write_str(&existing_content);
+        write!(new_content, "\n{}", content).unwrap_or_quit(1, "Can't extend content");
+        println!("Extending: {}", path_str);
+        assert!(fs::write(pathbuf.as_path(), new_content).is_ok());
+    } else {
+        if let Some(parent_dir) = pathbuf.parent() {
+            _ = fs::create_dir_all(parent_dir);
+        }
+        println!("Writing: {}", path_str);
+        assert!(fs::write(pathbuf.as_path(), content).is_ok());
+    }
 }
 
 pub(crate) fn make(args: &MakeArgs) {
@@ -72,7 +102,9 @@ pub(crate) fn make(args: &MakeArgs) {
         // Dry Run
         for entity in template_entities {
             match entity {
-                Node::File { path, content } => preview_file(&path, &content, &args.variables),
+                Node::File { path, content } | Node::Ext { path, content } => {
+                    preview_file(&path, &content, &args.variables)
+                }
                 Node::Dir(path) => println!("\n{{### DIR {} ###}}", path.to_str().unwrap()),
             }
         }
@@ -82,9 +114,10 @@ pub(crate) fn make(args: &MakeArgs) {
             match entity {
                 Node::File { path, content } => render_to_file(&path, &content, &args.variables),
                 Node::Dir(path) => {
-                  println!("Creating dir: {}", path.to_str().expect("Can't create dir"));
-                  _ = fs::create_dir_all(path);
+                    println!("Creating dir: {}", path.to_str().expect("Can't create dir"));
+                    _ = fs::create_dir_all(path);
                 }
+                Node::Ext { path, content } => render_or_extend(&path, &content, &args.variables),
             }
         }
     }

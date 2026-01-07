@@ -4,8 +4,9 @@ use std::io;
 use std::{fs, path::PathBuf};
 
 use crate::CreateArgs;
+use crate::error_handling::quit_with_error;
 use crate::{
-    empty_dir_scanner, file_scanner, quit_with_error,
+    empty_dir_scanner, file_scanner,
     template::{self, EXTENSION, Node},
 };
 
@@ -58,18 +59,18 @@ where
         let new_node = create_node(args, file_path);
         match new_node {
             Node::File { path, content } => {
-                let relative = diff_paths(&path, &pathbuf)?;
-                let path_str = relative.to_str()?;
-                writeln!(result, "{open} FILE {path_str} {close}").unwrap();
-                result.push_str(&content);
-                result.push('\n');
-            }
-
+                        let relative = diff_paths(&path, &pathbuf)?;
+                        let path_str = relative.to_str()?;
+                        writeln!(result, "{open} FILE {path_str} {close}").unwrap();
+                        result.push_str(&content);
+                        result.push('\n');
+                    }
             Node::Dir(path) => {
-                let relative = diff_paths(&path, &pathbuf)?;
-                let path_str = relative.to_str()?;
-                writeln!(result, "{open} DIR {path_str} {close}").unwrap()
-            }
+                        let relative = diff_paths(&path, &pathbuf)?;
+                        let path_str = relative.to_str()?;
+                        writeln!(result, "{open} DIR {path_str} {close}").unwrap()
+                    }
+            Node::Ext { .. } => todo!("Implement after tmplr create --appending is added"),
         }
     }
     let mut filename: String = String::new();
@@ -100,7 +101,7 @@ pub fn create_node(args: &CreateArgs, path: &str) -> Node {
     let Ok(content) = fs::read_to_string(pathbuf) else {
         quit_with_error(
             1,
-            format!("Can't read file for template creation: {}", path,),
+            &format!("Can't read file for template creation: {}", path),
         );
         unreachable!();
     };

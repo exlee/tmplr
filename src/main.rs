@@ -8,6 +8,7 @@ mod file_scanner;
 mod gen_template;
 mod render_template;
 mod template;
+mod error_handling;
 
 #[derive(Debug)]
 struct CreateArgs {
@@ -172,10 +173,6 @@ fn print_help_and_exit(code: i32) {
     std::process::exit(code);
 }
 
-fn quit_with_error(code: i32, err: String) {
-    eprintln!("Error: {}", err);
-    std::process::exit(code);
-}
 
 const HELP: &str = "
 tmplr (v0.0.5)
