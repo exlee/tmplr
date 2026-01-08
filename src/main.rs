@@ -160,7 +160,7 @@ fn print_help_and_exit(code: i32) {
 
 
 const HELP: &str = "
-tmplr (v0.0.6)
+tmplr (v0.0.7)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.

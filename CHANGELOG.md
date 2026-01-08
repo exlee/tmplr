@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.7] - 2026-01-08
+
+### Changed
+- Formatting of the `tmplr list` output into a tree like output
+ 
 ## [v0.0.6] - 2026-01-07
 ### Added
 - Support for `EXT` sections in templates. This allows content to be appended to existing files rather than overwriting them.
