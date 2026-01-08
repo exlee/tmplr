@@ -9,6 +9,7 @@ mod gen_template;
 mod render_template;
 mod template;
 mod error_handling;
+mod list_templates;
 
 #[derive(Debug)]
 struct CreateArgs {
@@ -43,27 +44,11 @@ pub fn main() {
         #[cfg(debug_assertions)]
         AppArgs::Debug => run_debug(&args),
         AppArgs::Make(make_args) => render_template::make(&make_args),
-        AppArgs::List => run_list(),
+        AppArgs::List => list_templates::run_list(),
         AppArgs::Create(create_args) => gen_template::create_template(&create_args),
     }
 }
 
-fn run_list() {
-    let templates_dir = template::templates_dir();
-    let templates = template::list_templates_relative(&templates_dir);
-    let templates_dir_str = templates_dir
-        .to_str()
-        .unwrap_or("ERROR Expanding Config Dir");
-
-    if Vec::is_empty(&templates) {
-        println!("No templates found in: {}", templates_dir_str);
-    }
-
-    println!("Listing template dir: {}", templates_dir_str);
-    for tmpl_file in templates {
-        println!("- {}", tmpl_file.to_string_lossy());
-    }
-}
 #[cfg(debug_assertions)]
 fn run_debug(_args: &AppArgs) {
     let example = PathBuf::from_str("assets/example.template").unwrap();

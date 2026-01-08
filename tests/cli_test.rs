@@ -1,4 +1,3 @@
-use std::{thread, time::Duration};
 
 use assert_cmd::Command;
 use assert_fs::prelude::*;
@@ -510,6 +509,79 @@ fn list_shows_template_dir() -> TestResult {
     Ok(())
 }
 
+#[test]
+fn list_is_nicely_formatted() -> TestResult {
+    let template_dir = assert_fs::TempDir::new()?;
+    let ef = template_dir.child("tmplr").child("e").child("f");
+    let cd = template_dir.child("tmplr").child("c").child("d");
+    let ab = template_dir.child("tmplr").child("a").child("b");
+
+    let _ = ab.child("ex1.tmplr").touch();
+    let _ = ab.child("ex2.tmplr").touch();
+    let _ = cd.child("ex3.tmplr").touch();
+    let _ = ef.child("ex4.tmplr").touch();
+    let _ = ef.child("ex5.tmplr").touch();
+    let _ = ef.child("ex6.tmplr").touch();
+    let _ = ef.child("ex7.tmplr").touch();
+
+    let mut cmd = Command::new(COMMAND);
+    cmd.arg("list")
+        .env("XDG_CONFIG_HOME", template_dir.to_str().unwrap())
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(
+            "
+a/
+  b/
+    - ex1.tmplr
+    - ex2.tmplr
+
+c/
+  d/
+    - ex3.tmplr
+
+e/
+  f/
+    - ex4.tmplr
+    - ex5.tmplr
+    - ex6.tmplr
+    - ex7.tmplr
+"));
+
+    Ok(())
+}
+
+#[test]
+fn list_is_nicely_formatted_flat() -> TestResult {
+    let template_dir = assert_fs::TempDir::new()?;
+    let tmplr = template_dir.child("tmplr");
+
+    let _ = tmplr.child("ex1.tmplr").touch();
+    let _ = tmplr.child("ex2.tmplr").touch();
+    let _ = tmplr.child("ex3.tmplr").touch();
+    let _ = tmplr.child("ex4.tmplr").touch();
+    let _ = tmplr.child("ex5.tmplr").touch();
+    let _ = tmplr.child("ex6.tmplr").touch();
+    let _ = tmplr.child("ex7.tmplr").touch();
+
+    let mut cmd = Command::new(COMMAND);
+    cmd.arg("list")
+        .env("XDG_CONFIG_HOME", template_dir.to_str().unwrap())
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(
+            "
+- ex1.tmplr
+- ex2.tmplr
+- ex3.tmplr
+- ex4.tmplr
+- ex5.tmplr
+- ex6.tmplr
+- ex7.tmplr
+"));
+
+    Ok(())
+}
 #[test]
 fn previews_basic_template_long_flag() -> TestResult {
     let template_dir = assert_fs::TempDir::new()?;

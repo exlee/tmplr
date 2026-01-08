@@ -9,8 +9,8 @@ use std::{
 
 use pathdiff::diff_paths;
 
-use crate::{error_handling::quit_with_error, file_scanner};
 use crate::error_handling::OkOrIoOther;
+use crate::{error_handling::quit_with_error, file_scanner};
 
 pub const EXTENSION: &str = "tmplr";
 pub const OPEN: &str = "{###";
@@ -32,7 +32,9 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
     fn push_output(s: &str, current_node: &mut Option<Node>) {
         match current_node {
             None => (),
-            Some(Node::File {content, ..}) | Some(Node::Ext {content, ..}) => content.push_str(s),
+            Some(Node::File { content, .. }) | Some(Node::Ext { content, .. }) => {
+                content.push_str(s)
+            }
             Some(Node::Dir { .. }) => quit_with_error(256, "Dir node shouldn't be current one"),
         }
     }
@@ -89,7 +91,7 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
                         let file_path = path
                             .to_str()
                             .ok_or_ioerror("Can't convert EXT path to string")?;
-                        current_node = Some(Node::Ext{
+                        current_node = Some(Node::Ext {
                             path: file_path.into(),
                             content: String::new(),
                         });
