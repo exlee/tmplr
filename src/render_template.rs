@@ -1,4 +1,9 @@
-use std::{collections::HashMap, fmt::Write, fs::{self}};
+use std::{
+    collections::HashMap,
+    fmt::Write,
+    fs::{self},
+    path::PathBuf,
+};
 
 use crate::{
     MakeArgs,
@@ -49,8 +54,10 @@ pub fn render(template: &str, ctx: &HashMap<String, String>) -> String {
 }
 
 fn render_to_file(path_str: &str, content: &str, context: &HashMap<String, String>) {
-    let content = render(content, context);
-    let path_str = render(path_str, context);
+    let mut context = context.clone();
+    update_context_with_magic_vars(&mut context, path_str);
+    let content = render(content, &context);
+    let path_str = render(path_str, &context);
     let pathbuf =
         validate_path_string(path_str.as_str()).unwrap_or_quit(1, "Invalid template definition");
     if let Some(parent_dir) = pathbuf.parent() {
@@ -124,9 +131,22 @@ pub(crate) fn make(args: &MakeArgs) {
 }
 
 fn preview_file(path_str: &str, content: &str, context: &HashMap<String, String>) {
-    let content = render(content, context);
-    let path_str = render(path_str, context);
+    let mut context = context.clone();
+    let path_str = render(path_str, &context);
+
+    update_context_with_magic_vars(&mut context, &path_str);
+
+    let content = render(content, &context);
     let content = content.trim();
     println!("\n{{### FILE {} ###}}", path_str);
     println!("{}", content);
+}
+
+fn update_context_with_magic_vars(context: &mut HashMap<String, String>, path_str: &str) {
+    let pathbuf = PathBuf::from(&path_str);
+    context.insert("$path".to_string(), path_str.to_string());
+    if let Some(filename) = pathbuf.file_name() {
+        let filename_str: String = filename.to_string_lossy().to_string();
+        context.insert("$file".to_string(), filename_str);
+    }
 }
