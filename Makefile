@@ -3,6 +3,9 @@
 test:
 	cargo test -- --nocapture
 
+test-sort:
+	cargo test -- --test-threads=1 --nocapture
+
 watch-test:
 	fd -e rs | entr -r make test
 
