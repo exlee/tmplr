@@ -4,11 +4,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::template;
+use crate::{
+    file_scanner,
+    template::{self, EXTENSION},
+};
 
 pub fn run_list() {
     let templates_dir = template::templates_dir();
-    let templates = template::list_templates_relative(&templates_dir);
+    let templates = list_templates_relative(&templates_dir);
     let templates_dir_str = templates_dir
         .to_str()
         .unwrap_or("ERROR Expanding Config Dir");
@@ -21,6 +24,19 @@ pub fn run_list() {
     println!("Listing template dir: {}", templates_dir_str);
     let template_tree: TemplateTree = templates.into();
     template_tree.print();
+}
+
+pub fn fuzzy_select_template() -> Option<PathBuf> {
+    let templates_dir = template::templates_dir();
+    let templates = list_templates_relative(&templates_dir);
+    let templates_str: Vec<&str> = templates.iter().map(|p| p.to_str().unwrap()).collect();
+
+    dialoguer::FuzzySelect::new()
+        .with_prompt("template")
+        .items(&templates_str)
+        .interact_opt()
+        .ok()?
+        .map(|s| templates[s].clone())
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -176,9 +192,17 @@ impl DepthPrint for TemplateFile {
     }
 }
 
+pub fn list_templates_relative(path: &Path) -> Vec<PathBuf> {
+    file_scanner::FileScanner::new_with_extension(path, EXTENSION.into())
+        .flatten()
+        .map(|p| pathdiff::diff_paths(&p, path).unwrap_or(p))
+        .collect()
+}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_fs::prelude::*;
+    use predicates::prelude::*;
 
     fn single_child(node: TemplateNode) -> TemplateTree {
         TemplateTree(vec![node])
@@ -240,6 +264,37 @@ a/
         .to_owned();
 
         assert_eq!(got, expected);
+        Ok(())
+    }
+    #[test]
+    fn can_list_templates() -> Result<(), Box<dyn std::error::Error>> {
+        let template_dir = assert_fs::TempDir::new()?;
+
+        _ = template_dir.child("t1").child("ex1.tmplr").touch();
+        _ = template_dir.child("t1").child("ex2.tmplr").touch();
+        _ = template_dir.child("ex3.tmplr").touch();
+        _ = template_dir.child("t2").child("ex4.tmplr").touch();
+        _ = template_dir
+            .child("t2")
+            .child("sub")
+            .child("ex5.tmplr")
+            .touch();
+        _ = template_dir
+            .child("t2")
+            .child("sub")
+            .child("ex6.tmplr")
+            .touch();
+
+        let templates = list_templates_relative(template_dir.path());
+        assert_eq!(templates.len(), 6);
+
+        let templates_str = templates.iter().map(|p| p.to_str().unwrap());
+
+        let predicate_iterator = predicate::in_iter(templates_str);
+
+        assert!(predicate_iterator.eval("ex3.tmplr"));
+        assert!(predicate_iterator.eval("t2/sub/ex6.tmplr"));
+
         Ok(())
     }
 }

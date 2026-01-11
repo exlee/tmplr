@@ -3,13 +3,15 @@ use std::{collections::HashMap, path::PathBuf};
 #[cfg(debug_assertions)]
 use std::{env::current_dir, str::FromStr};
 
+use crate::list_templates::fuzzy_select_template;
+
 mod empty_dir_scanner;
+mod error_handling;
 mod file_scanner;
 mod gen_template;
+mod list_templates;
 mod render_template;
 mod template;
-mod error_handling;
-mod list_templates;
 
 #[derive(Debug)]
 struct CreateArgs {
@@ -77,31 +79,46 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
 
     let Ok(Some(subcommand)) = pargs.subcommand() else {
-        print_help_and_exit(0);
-        unreachable!();
+        return run_interactive();
     };
+
+    if pargs.contains(["-h", "--help"]) {
+        print_help_and_exit(0);
+    }
     match subcommand.to_lowercase().as_str() {
         #[cfg(debug_assertions)]
         "dbg" => Ok(AppArgs::Debug {}),
         "make" => {
             let dry_run = pargs.contains(["-n", "--dry-run"]);
-            let template_path: PathBuf = pargs.free_from_str()?;
-            let instance_name: String = pargs.free_from_str()?;
+            let mut template_path: Option<PathBuf> = pargs.opt_free_from_str()?;
+            let mut instance_name: Option<String> = pargs.opt_free_from_str()?;
 
             let mut ctx: HashMap<String, String> = HashMap::new();
 
             for var in pargs.finish() {
                 let str: String = var.into_string().unwrap_or("".into());
 
-                // Clippy complains, but nightly fails to compile
-                if str.contains("=") {
-                    if let Some((key, value)) = str.split_once("=") {
-                        ctx.insert(key.into(), value.into());
-                    }
+                if let Some((key, value)) = str.split_once("=") {
+                    ctx.insert(key.into(), value.into());
                 }
             }
 
-            ctx.insert("name".into(), instance_name);
+            if template_path.is_none() {
+                template_path = fuzzy_select_template();
+                if template_path.is_none() {
+                    print_help_and_exit(1);
+                }
+            }
+
+            if instance_name.is_none() {
+                instance_name = dialoguer::Input::new()
+                    .with_prompt("{{ name }}")
+                    .interact_text()
+                    .ok();
+            }
+
+            let template_path = template_path.expect("Missing template path");
+            ctx.insert("name".into(), instance_name.unwrap());
 
             let cmd = AppArgs::Make(MakeArgs {
                 template_path,
@@ -118,8 +135,7 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
             let working_dir: String = pargs
                 .opt_value_from_str("--change-dir")?
                 .or_else(|| pargs.opt_value_from_str("-C").expect("Can't unwrap"))
-                .or(Some(String::from(".")))
-                .unwrap();
+                .unwrap_or(String::from("."));
 
             if listed_files_only {
                 let mut files: Vec<PathBuf> = Vec::new();
@@ -153,14 +169,39 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
     }
 }
 
+fn run_interactive() -> Result<AppArgs, pico_args::Error> {
+    let mut ctx: HashMap<String, String> = HashMap::new();
+    let template_path = match fuzzy_select_template() {
+        Some(t) => t,
+        None => {
+            println!("Aborted.");
+            std::process::exit(1);
+        }
+    };
+
+    let instance_name: Option<String> = dialoguer::Input::new()
+        .with_prompt("{{ name }}")
+        .interact_text()
+        .ok();
+
+    ctx.insert("name".to_string(), instance_name.unwrap());
+
+    let cmd = AppArgs::Make(MakeArgs {
+        template_path,
+        variables: ctx,
+        dry_run: false,
+    });
+
+    Ok(cmd)
+}
+
 fn print_help_and_exit(code: i32) {
     println!("{}", HELP.trim());
     std::process::exit(code);
 }
 
-
 const HELP: &str = "
-tmplr (v0.0.7)
+tmplr (v0.0.8)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.

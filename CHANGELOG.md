@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.8] - 2026-01-11
+
+### Added
+- Support for "magic" variables {{ $path }} and {{ $file }}
+- Interactive mode when subcommand is not specified
+- Interactive mode when {{ name }} variable is missing
+- Fuzzy finder for templates in interactive mode
+
 ## [v0.0.7] - 2026-01-08
 
 ### Changed

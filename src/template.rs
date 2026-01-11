@@ -7,10 +7,8 @@ use std::{
     str::FromStr,
 };
 
-use pathdiff::diff_paths;
-
-use crate::error_handling::OkOrIoOther;
-use crate::{error_handling::quit_with_error, file_scanner};
+use crate::error_handling::quit_with_error;
+use crate::{error_handling::OkOrIoOther, list_templates::list_templates_relative};
 
 pub const EXTENSION: &str = "tmplr";
 pub const OPEN: &str = "{###";
@@ -175,13 +173,6 @@ fn get_config_dir() -> PathBuf {
     PathBuf::from(".")
 }
 
-pub fn list_templates_relative(path: &Path) -> Vec<PathBuf> {
-    file_scanner::FileScanner::new_with_extension(path, EXTENSION.into())
-        .flatten()
-        .map(|p| diff_paths(&p, path).unwrap_or(p))
-        .collect()
-}
-
 pub fn templates_dir() -> PathBuf {
     get_config_dir()
 }
@@ -193,40 +184,4 @@ fn other_err(err: &str) -> io::Error {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use assert_fs::prelude::*;
-    use predicates::prelude::*;
-
-    #[test]
-    fn can_list_templates() -> Result<(), Box<dyn std::error::Error>> {
-        let template_dir = assert_fs::TempDir::new()?;
-
-        _ = template_dir.child("t1").child("ex1.tmplr").touch();
-        _ = template_dir.child("t1").child("ex2.tmplr").touch();
-        _ = template_dir.child("ex3.tmplr").touch();
-        _ = template_dir.child("t2").child("ex4.tmplr").touch();
-        _ = template_dir
-            .child("t2")
-            .child("sub")
-            .child("ex5.tmplr")
-            .touch();
-        _ = template_dir
-            .child("t2")
-            .child("sub")
-            .child("ex6.tmplr")
-            .touch();
-
-        let templates = list_templates_relative(template_dir.path());
-        assert_eq!(templates.len(), 6);
-
-        let templates_str = templates.iter().map(|p| p.to_str().unwrap());
-
-        let predicate_iterator = predicate::in_iter(templates_str);
-
-        assert!(predicate_iterator.eval("ex3.tmplr"));
-        assert!(predicate_iterator.eval("t2/sub/ex6.tmplr"));
-
-        Ok(())
-    }
-}
+mod tests {}

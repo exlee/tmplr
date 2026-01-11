@@ -27,7 +27,7 @@ tmplr make script.tmplr MyScript
 # CLI Help
 
 ```
-tmplr (v0.0.7)
+tmplr (v0.0.8)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.
@@ -102,6 +102,14 @@ There is no template functions or anything whatsoever. Only simple substitution!
 
 * `{### DIR path/to/dir ###}`
     **Creates an empty directory**. This section does not support content/body text.### .tmplr sections
+
+
+### Magic Variables
+
+`.tmplr` supports following "magic" variables:
+
+* **$path** which expands to expanded file path (relative to expansion root)
+* **$file** which expands to current file name (with extension)
 
 ## CLI
 
