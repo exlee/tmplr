@@ -1,0 +1,89 @@
+{### FILE {{ name }}_tool.cue ###}
+package {{ name }}
+
+import (
+  "tool/file"
+  "tool/exec"
+)
+command: {{ name }}: {
+  for k, v in files {
+    "\(k)": file.Create & {
+      filename: k
+      contents: v
+    }
+  }
+}
+data: exec.Run & {
+	cmd: ["sh", "-c", "echo 123"]
+	stdout: string
+}
+files: {
+  "output.md": """
+  \(data.stdout)
+  """
+}
+
+{### FILE {{name}}_renderers.cue ###}
+package {{ name }}
+
+import (
+	"tool/exec"
+)
+
+renderers: pikchr: exec.Run & {
+  cmd: ["pikchr", "--svg-only", "-"]
+  code:   string
+  stdout: string
+}
+renderers: haskell: exec.Run & {
+  code:   string
+  stdout: string
+  cmd: ["stack", "runghc"]
+  stdin: """
+  module Program where
+  \(code)
+  """
+}
+renderers: bash: exec.Run & {
+  code:   string
+  stdout: string
+  cmd: ["bash", "-e"]
+  stdin: code
+}
+renderers: sh: exec.Run & {
+  code:   string
+  stdout: string
+  cmd: ["sh", "-e"]
+  stdin: code
+}
+renderers: zsh: exec.Run & {
+	code:   string
+	stdout: string
+	cmd: ["zsh", "-e"]
+	stdin: code
+}
+
+renderers: haskell: exec.Run & {
+  code:   string
+  stdout: string
+  cmd: ["stack", "runghc"]
+  stdin: """
+  module Program where
+  \(code)
+  """
+}
+renderers: line_extractor: exec.Run & {
+  stdout: string
+  file: string
+  from: number
+  to: number
+  cmd: ["sed", "-ne", "\(from),\(to)p", file]
+}
+renderers: line_search: exec.Run & {
+  stdout: string
+  file: string
+  start: string
+  end: string
+  cmd: ["sed", "-ne", "/\(start)/,/\(end)/p", file]
+}
+
