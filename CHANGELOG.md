@@ -1,3 +1,12 @@
+## [v0.0.9] - 2026-01-13
+
+### Added
+
+
+### Changed
+- Fix --help not being picked up when subcommand was not provided
+- Add CUE-based generation for documentation etc.
+
 ## [v0.0.8] - 2026-01-11
 
 ### Added

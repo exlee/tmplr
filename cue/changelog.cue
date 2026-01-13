@@ -5,6 +5,14 @@ import (
 )
 
 changelog: entries: {
+	"0.0.9": {
+		date: "2026-01-13"
+		added: []
+		changed: [
+			"Fix --help not being picked up when subcommand was not provided",
+			"Add CUE-based generation for documentation etc.",
+		]
+	}
 	"0.0.8": {
 		date: "2026-01-11"
 		added: [

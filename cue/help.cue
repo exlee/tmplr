@@ -9,6 +9,8 @@ tmplr (v\(version))
 
 Usage:
 
+	<EMPTY>	Interactive mode, starts fuzzy finder for picking templates.
+
 	make    <TEMPLATE_FILE/TEMPLATE_NAME> <NAME> VAR=VAL...
 
 	        Instantiate template. Partial names supported
@@ -25,6 +27,7 @@ Usage:
 	        --simple             	don't replace file contents
 
 	list    List available templates
+
 """
 }
 

@@ -78,13 +78,14 @@ fn run_debug(_args: &AppArgs) {
 fn parse_args() -> Result<AppArgs, pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
 
+    if pargs.contains(["-h", "--help"]) {
+        print_help_and_exit(0);
+    }
+
     let Ok(Some(subcommand)) = pargs.subcommand() else {
         return run_interactive();
     };
 
-    if pargs.contains(["-h", "--help"]) {
-        print_help_and_exit(0);
-    }
     match subcommand.to_lowercase().as_str() {
         #[cfg(debug_assertions)]
         "dbg" => Ok(AppArgs::Debug {}),
