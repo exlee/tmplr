@@ -1,14 +1,14 @@
-package main
+package license
 
 import (
-  "strings"
+	"strings"
 )
 
 _license_year_start: 2025
-_license_year: "\(_license_year_start)"
+_license_year:       "\(_license_year_start)"
 
 _copyright_holders_list: [
-  "Przemysław Alexander Kamiński (vel xlii vel exlee)"
+	"Przemysław Alexander Kamiński (vel xlii vel exlee)",
 ]
 _copyright_holders: strings.Join(_copyright_holders_list, ", ")
 
@@ -23,4 +23,3 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 Except as contained in this notice, the name of \(_copyright_holders) shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization from \(_copyright_holders).
 """
-

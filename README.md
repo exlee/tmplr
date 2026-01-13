@@ -1,14 +1,17 @@
 # tmplr
+
 Zero-friction project scaffolding for your terminal.
 
 tmplr (pronounced "templar") turns a single text file into a complex directory structure. It's a lightweight, logic-free alternative to heavy tools like Cookiecutter. No python dependencies, no complex configuration—just simple substitution.
 
 ## Why tmplr?
+
 Single Source of Truth: Define multiple files and directories in one readable .tmplr file.
 Dead Simple: No logic loops or complex functions. Just {{ variable }} substitution.
 Fast: Written in Rust for instant execution.
 
 # Quick Start
+
 1. Create a template (script.tmplr)
 ```plain
 {### FILE {{name}}.sh ###}
@@ -103,7 +106,6 @@ There is no template functions or anything whatsoever. Only simple substitution!
 * `{### DIR path/to/dir ###}`
     **Creates an empty directory**. This section does not support content/body text.### .tmplr sections
 
-
 ### Magic Variables
 
 `.tmplr` supports following "magic" variables:
@@ -149,3 +151,4 @@ This "script" is a `script.tmplr` template that I can use to easily produce file
 - [x] ~Add partial matching upon creation~
 - [x] ~Add "append" command (for inserting data in existing file)~
 - [x] ~Make listing nicer~
+

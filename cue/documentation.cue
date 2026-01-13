@@ -1,0 +1,6 @@
+package documentation
+
+version:      "0.0.8"
+repository:   "exlee/tmplr"
+git_repo:     "git@github.com:\(repository).git"
+releases_url: "https://github.com/\(repository)/releases"
