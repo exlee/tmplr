@@ -200,4 +200,4 @@ fn print_help_and_exit(code: i32) {
     println!("{}", HELP.trim());
     std::process::exit(code);
 }
-include!(concat!(env!("OUT_DIR"), "/generated_docs.rs"));
+include!(concat!(env!("CARGO_MANIFEST_DIR"), "/generated/help.rs"));
