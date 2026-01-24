@@ -18,14 +18,14 @@ pub fn create_template(args: &CreateArgs) {
         create_template_generic(args, files_iter.into_iter().map(Ok), empty_dirs_iter)
     } else {
         let pathbuf = &args.path;
-        let files_iter = file_scanner::FileScanner::new(&pathbuf);
-        let empty_dirs_iter = empty_dir_scanner::EmptyDirScanner::new(&pathbuf);
+        let files_iter = file_scanner::FileScanner::new(pathbuf);
+        let empty_dirs_iter = empty_dir_scanner::EmptyDirScanner::new(pathbuf);
 
         create_template_generic(args, files_iter, empty_dirs_iter)
     };
 
     if result.is_none() {
-        quit_with_error(1, "Error template crash".into());
+        quit_with_error(1, "Error template crash");
         unreachable!();
     }
 }
@@ -43,11 +43,11 @@ where
 
     for dir in dirs.flatten() {
         let dir_pathbuf = dir.clone();
-        let relative = diff_paths(&dir_pathbuf, &pathbuf)?;
+        let relative = diff_paths(&dir_pathbuf, pathbuf)?;
         let path_str = relative.to_str()?;
         let new_node = create_dir_node(args, path_str);
         if let Node::Dir(path) = new_node {
-            let relative = diff_paths(&path, &pathbuf)?;
+            let relative = diff_paths(&path, pathbuf)?;
             let path_str = relative.to_str()?;
             writeln!(result, "{open} DIR {path_str} {close}").unwrap()
         }
@@ -59,14 +59,14 @@ where
         let new_node = create_node(args, file_path);
         match new_node {
             Node::File { path, content } => {
-                        let relative = diff_paths(&path, &pathbuf)?;
+                        let relative = diff_paths(&path, pathbuf)?;
                         let path_str = relative.to_str()?;
                         writeln!(result, "{open} FILE {path_str} {close}").unwrap();
                         result.push_str(&content);
                         result.push('\n');
                     }
             Node::Dir(path) => {
-                        let relative = diff_paths(&path, &pathbuf)?;
+                        let relative = diff_paths(&path, pathbuf)?;
                         let path_str = relative.to_str()?;
                         writeln!(result, "{open} DIR {path_str} {close}").unwrap()
                     }
@@ -125,7 +125,7 @@ fn replace_word_bounded(input: &str, target: &str, replacement: &str) -> String 
     let mut last_idx = 0;
 
     let crash_during_replacement = || {
-        quit_with_error(1, "Error during replacing string".into());
+        quit_with_error(1, "Error during replacing string");
         unreachable!()
     };
 

@@ -44,7 +44,7 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
         }
     }
 
-    let file_string = get_template_string_from_path(&path)?;
+    let file_string = get_template_string_from_path(path)?;
 
     while let Some(start_offset) = file_string[cursor..].find(OPEN) {
         let tag_start = cursor + start_offset;
@@ -58,7 +58,7 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
             // process cmds
             let (cmd, params) = match inner.split_once(char::is_whitespace) {
                 Some((c, p)) => (c.trim(), p),
-                None => (*inner, "".into()),
+                None => (*inner, ""),
             };
 
             match cmd.to_uppercase().as_str() {
@@ -180,10 +180,10 @@ pub fn templates_dir() -> PathBuf {
     get_config_dir()
 }
 fn err<T>(err: &str) -> io::Result<T> {
-    return Err(io::Error::other(err));
+    Err(io::Error::other(err))
 }
 fn other_err(err: &str) -> io::Error {
-    return io::Error::other(err);
+    io::Error::other(err)
 }
 
 #[cfg(test)]
