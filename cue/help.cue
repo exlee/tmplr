@@ -28,6 +28,8 @@ Usage:
 
 	list    List available templates
 
+	echo    Echo unexpanded to STDOUT
+
 """
 }
 

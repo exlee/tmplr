@@ -30,7 +30,7 @@ tmplr make script.tmplr MyScript
 # CLI Help
 
 ```
-tmplr (v0.0.9)
+tmplr (v0.0.10)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.
@@ -55,6 +55,8 @@ Usage:
 	        --simple             	don't replace file contents
 
 	list    List available templates
+
+	echo    Echo unexpanded to STDOUT
 
 ```
 

@@ -44,10 +44,7 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
         }
     }
 
-    let file_string = fs::read_to_string(path)
-        .or_else(|_| fs::read_to_string(get_config_dir().join(path)))
-        .or_else(|_| fs::read_to_string(get_config_dir().join(path).with_added_extension("tmplr")))
-        .or_else(|_| read_partial_matched_template(path))?;
+    let file_string = get_template_string_from_path(&path)?;
 
     while let Some(start_offset) = file_string[cursor..].find(OPEN) {
         let tag_start = cursor + start_offset;
@@ -113,7 +110,13 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
     Ok(result)
 }
 
-fn read_partial_matched_template(path: &Path) -> io::Result<String> {
+pub fn get_template_string_from_path(path: &Path) -> io::Result<String> {
+    fs::read_to_string(path)
+        .or_else(|_| fs::read_to_string(get_config_dir().join(path)))
+        .or_else(|_| fs::read_to_string(get_config_dir().join(path).with_added_extension("tmplr")))
+        .or_else(|_| read_partial_matched_template(path))
+}
+pub(crate) fn read_partial_matched_template(path: &Path) -> io::Result<String> {
     let input_path = path.to_string_lossy().to_string();
     let config_dir = get_config_dir();
     let all_templates = list_templates_relative(&config_dir);

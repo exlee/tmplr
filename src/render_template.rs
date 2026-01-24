@@ -6,9 +6,12 @@ use std::{
 };
 
 use crate::{
-    MakeArgs,
+    EchoArgs, MakeArgs,
     error_handling::UnwrapQuit,
-    template::{Node, read_template, validate_path_string},
+    template::{
+        Node, get_template_string_from_path, read_template,
+        validate_path_string,
+    },
 };
 
 pub fn render(template: &str, ctx: &HashMap<String, String>) -> String {
@@ -140,6 +143,15 @@ fn preview_file(path_str: &str, content: &str, context: &HashMap<String, String>
     let content = content.trim();
     println!("\n{{### FILE {} ###}}", path_str);
     println!("{}", content);
+}
+
+pub fn echo(echo_args: &EchoArgs) {
+    let path = &echo_args.template_path;
+    let template_content = get_template_string_from_path(path);
+    match template_content {
+        Ok(template_string) => println!("{}", template_string),
+        Err(err) => eprintln!("{}", err),
+    }
 }
 
 fn update_context_with_magic_vars(context: &mut HashMap<String, String>, path_str: &str) {

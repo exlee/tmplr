@@ -27,10 +27,15 @@ struct MakeArgs {
     dry_run: bool,
 }
 #[derive(Debug)]
+struct EchoArgs {
+    template_path: PathBuf,
+}
+#[derive(Debug)]
 enum AppArgs {
     List,
     Create(CreateArgs),
     Make(MakeArgs),
+    Echo(EchoArgs),
     #[cfg(debug_assertions)]
     Debug,
 }
@@ -48,6 +53,7 @@ pub fn main() {
         AppArgs::Make(make_args) => render_template::make(&make_args),
         AppArgs::List => list_templates::run_list(),
         AppArgs::Create(create_args) => gen_template::create_template(&create_args),
+        AppArgs::Echo(echo_args) => render_template::echo(&echo_args),
     }
 }
 
@@ -127,6 +133,13 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
                 dry_run,
             });
 
+            Ok(cmd)
+        }
+        "echo" => {
+            let template_path: PathBuf = pargs.opt_free_from_str()?.ok_or(pico_args::Error::MissingArgument)?;
+            let cmd = AppArgs::Echo(EchoArgs {
+                template_path,
+            });
             Ok(cmd)
         }
         "create" => {

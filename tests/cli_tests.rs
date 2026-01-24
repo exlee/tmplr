@@ -7,4 +7,5 @@ mod cli_tests {
     mod unroll_extension_tests;
     mod unroll_tests;
     mod magic_variable_tests;
+    mod echo_tests;
 }
