@@ -1,8 +1,15 @@
 [package]
-name = "templar"
-#version = "0.0.8"
-version = "0.0.0"
+name = "tmplr"
+version = "0.1.0"
 edition = "2024"
+authors = ["Przemyslaw Alexander Kaminski <xlii@users.noreply.github.com>"]
+description = "Zero-friction project scaffolding for your terminal"
+repository = "https://github.com/exlee/tmplr"
+license = "MIT"
+readme = "README.md"
+keywords = ["template", "scaffolding", "cli", "project-generator"]
+categories = ["command-line-utilities", "development-tools", "template-engine"]
+rust-version = "1.91.0"
 
 # Optimize dependencies even in debug mode
 [profile.dev.package."*"]
@@ -14,11 +21,11 @@ opt-level = 3
 #strip = "debuginfo"
 
 [profile.release]
-debug = 0  # or 1 for line tables only
+debug = 0
 strip = true
 opt-level = "z"
 lto = true
-codegen-units=1
+codegen-units = 1
 panic = "abort"
 
 [dependencies]

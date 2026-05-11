@@ -1,3 +1,12 @@
+## [v0.1.0] - 2026-05-11
+
+### Added
+- First crates.io release
+
+### Changed
+- 'echo' subcommand for printing unexpanded template to STDOUT
+- Skip name prompt when template has no variables
+
 ## [v0.0.9] - 2026-01-13
 
 ### Added

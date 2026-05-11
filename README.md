@@ -30,7 +30,7 @@ tmplr make script.tmplr MyScript
 # CLI Help
 
 ```
-tmplr (v0.0.10)
+tmplr (v0.1.0)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.
@@ -62,6 +62,11 @@ Usage:
 
 # Installation
 
+```
+cargo install tmplr
+```
+
+Or from source:
 ```
 git clone git@github.com:exlee/tmplr.git
 cargo install --path .

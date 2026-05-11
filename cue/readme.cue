@@ -72,6 +72,11 @@ readme: {
 			"""
 		installation: """
       ```
+      cargo install tmplr
+      ```
+
+      Or from source:
+      ```
       git clone \(git_repo)
       cargo install --path .
       ```

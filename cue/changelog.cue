@@ -5,6 +5,16 @@ import (
 )
 
 changelog: entries: {
+	"0.1.0": {
+		date: "2026-05-11"
+		added: [
+			"First crates.io release",
+		]
+		changed: [
+			"'echo' subcommand for printing unexpanded template to STDOUT",
+			"Skip name prompt when template has no variables",
+		]
+	}
 	"0.0.9": {
 		date: "2026-01-13"
 		added: []
