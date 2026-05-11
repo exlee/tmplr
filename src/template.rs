@@ -22,6 +22,17 @@ pub enum Node {
 }
 type Template = Vec<Node>;
 
+pub fn template_has_vars(path: &Path) -> bool {
+    dbg!(path);
+    for line in std::fs::read_to_string(path).unwrap_or_default()
+        .lines() {
+            if line.contains("{{") && line.contains("}}") {
+                return true;
+            }
+        };
+    false
+}
+
 pub fn read_template(path: &Path) -> io::Result<Template> {
     let mut result: Template = Vec::new();
     let mut cursor = 0;

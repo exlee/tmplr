@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::PathBuf};
 #[cfg(debug_assertions)]
 use std::{env::current_dir, str::FromStr};
 
-use crate::list_templates::fuzzy_select_template;
+use crate::{list_templates::fuzzy_select_template, template::template_has_vars};
 
 mod empty_dir_scanner;
 mod error_handling;
@@ -98,7 +98,7 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
         "make" => {
             let dry_run = pargs.contains(["-n", "--dry-run"]);
             let mut template_path: Option<PathBuf> = pargs.opt_free_from_str()?;
-            let mut instance_name: Option<String> = pargs.opt_free_from_str()?;
+            let instance_name: Option<String> = pargs.opt_free_from_str()?;
 
             let mut ctx: HashMap<String, String> = HashMap::new();
 
@@ -116,16 +116,23 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
                     print_help_and_exit(1);
                 }
             }
-
-            if instance_name.is_none() {
-                instance_name = dialoguer::Input::new()
-                    .with_prompt("{{ name }}")
-                    .interact_text()
-                    .ok();
-            }
-
             let template_path = template_path.expect("Missing template path");
-            ctx.insert("name".into(), instance_name.unwrap());
+
+            match (instance_name, template_has_vars(&template_path)) {
+                (Some(n), _) => {
+                    ctx.insert("name".into(), n);
+                }
+                (None, false) => {
+                    ctx.insert("name".into(), "".into());
+                }
+                (None, true) => {
+                    let given_name = dialoguer::Input::new()
+                        .with_prompt("{{ name }}")
+                        .interact_text()
+                        .ok();
+                    ctx.insert("name".into(), given_name.unwrap());
+                }
+            }
 
             let cmd = AppArgs::Make(MakeArgs {
                 template_path,
@@ -136,10 +143,10 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
             Ok(cmd)
         }
         "echo" => {
-            let template_path: PathBuf = pargs.opt_free_from_str()?.ok_or(pico_args::Error::MissingArgument)?;
-            let cmd = AppArgs::Echo(EchoArgs {
-                template_path,
-            });
+            let template_path: PathBuf = pargs
+                .opt_free_from_str()?
+                .ok_or(pico_args::Error::MissingArgument)?;
+            let cmd = AppArgs::Echo(EchoArgs { template_path });
             Ok(cmd)
         }
         "create" => {
@@ -193,12 +200,16 @@ fn run_interactive() -> Result<AppArgs, pico_args::Error> {
         }
     };
 
-    let instance_name: Option<String> = dialoguer::Input::new()
-        .with_prompt("{{ name }}")
-        .interact_text()
-        .ok();
+    if template_has_vars(&template_path) {
+        let instance_name: Option<String> = dialoguer::Input::new()
+            .with_prompt("{{ name }}")
+            .interact_text()
+            .ok();
 
-    ctx.insert("name".to_string(), instance_name.unwrap());
+        ctx.insert("name".to_string(), instance_name.unwrap());
+    } else {
+        ctx.insert("name".to_string(), "".into());
+    }
 
     let cmd = AppArgs::Make(MakeArgs {
         template_path,
