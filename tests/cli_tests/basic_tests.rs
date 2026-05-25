@@ -6,7 +6,8 @@ type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 const COMMAND: &str = env!("CARGO_BIN_EXE_tmplr");
 
-#[test] fn minimal_template() -> TestResult {
+#[test]
+fn minimal_template() -> TestResult {
     let template_dir = assert_fs::TempDir::new()?;
     let unroll_dir = assert_fs::TempDir::new()?;
 

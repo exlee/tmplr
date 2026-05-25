@@ -14,13 +14,12 @@ pub struct EmptyDirScanner {
 
 impl EmptyDirScanner {
     pub fn new<P: AsRef<Path>>(root: P) -> Self {
-      let pathbuf = root.as_ref().to_path_buf();
+        let pathbuf = root.as_ref().to_path_buf();
         Self {
             stack: vec![pathbuf.clone()],
             current_dir: None,
             current_empty: true,
             current_path: None,
-            
         }
     }
 }
@@ -32,7 +31,7 @@ impl Iterator for EmptyDirScanner {
         loop {
             // Active Iterator
             if let Some(ref mut entries) = self.current_dir {
-                match entries.next()  {
+                match entries.next() {
                     Some(Ok(entry)) => {
                         let path = entry.path();
                         self.current_empty = false;
@@ -43,13 +42,12 @@ impl Iterator for EmptyDirScanner {
                     }
                     Some(Err(e)) => return Some(Err(e)),
                     None => {
-                      if self.current_empty {
-                        let dir = self.current_path.clone().expect("Can't unpack path");
-                        self.current_dir = None;
+                        if self.current_empty {
+                            let dir = self.current_path.clone().expect("Can't unpack path");
+                            self.current_dir = None;
 
-
-                        return Some(Ok(dir));
-                      }
+                            return Some(Ok(dir));
+                        }
                     }
                 }
             }
@@ -58,10 +56,10 @@ impl Iterator for EmptyDirScanner {
             match self.stack.pop() {
                 Some(dir_path) => match fs::read_dir(dir_path.clone()) {
                     Ok(read_dir) => {
-                      self.current_dir = Some(read_dir);
-                      self.current_path = Some(dir_path);
-                      self.current_empty = true
-                    },
+                        self.current_dir = Some(read_dir);
+                        self.current_path = Some(dir_path);
+                        self.current_empty = true
+                    }
                     Err(e) => return Some(Err(e)),
                 },
                 None => return None,

@@ -8,10 +8,7 @@ use std::{
 use crate::{
     EchoArgs, MakeArgs,
     error_handling::UnwrapQuit,
-    template::{
-        Node, get_template_string_from_path, read_template,
-        validate_path_string,
-    },
+    template::{Node, get_template_string_from_path, read_template, validate_path_string},
 };
 
 pub fn render(template: &str, ctx: &HashMap<String, String>) -> String {

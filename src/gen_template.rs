@@ -59,17 +59,17 @@ where
         let new_node = create_node(args, file_path);
         match new_node {
             Node::File { path, content } => {
-                        let relative = diff_paths(&path, pathbuf)?;
-                        let path_str = relative.to_str()?;
-                        writeln!(result, "{open} FILE {path_str} {close}").unwrap();
-                        result.push_str(&content);
-                        result.push('\n');
-                    }
+                let relative = diff_paths(&path, pathbuf)?;
+                let path_str = relative.to_str()?;
+                writeln!(result, "{open} FILE {path_str} {close}").unwrap();
+                result.push_str(&content);
+                result.push('\n');
+            }
             Node::Dir(path) => {
-                        let relative = diff_paths(&path, pathbuf)?;
-                        let path_str = relative.to_str()?;
-                        writeln!(result, "{open} DIR {path_str} {close}").unwrap()
-                    }
+                let relative = diff_paths(&path, pathbuf)?;
+                let path_str = relative.to_str()?;
+                writeln!(result, "{open} DIR {path_str} {close}").unwrap()
+            }
             Node::Ext { .. } => todo!("Implement after tmplr create --appending is added"),
         }
     }

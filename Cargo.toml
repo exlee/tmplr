@@ -1,6 +1,6 @@
 [package]
 name = "tmplr"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Przemyslaw Alexander Kaminski <xlii@users.noreply.github.com>"]
 description = "Zero-friction project scaffolding for your terminal"

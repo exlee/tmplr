@@ -21,30 +21,25 @@ pub trait UnwrapQuit<T, E> {
     where
         E: Into<Box<dyn std::error::Error + Send + Sync>>;
 }
-impl<T, E> UnwrapQuit<T, E> for Result<T,E> 
-    where
-        E: Into<Box<dyn std::error::Error + Send + Sync>> {
+impl<T, E> UnwrapQuit<T, E> for Result<T, E>
+where
+    E: Into<Box<dyn std::error::Error + Send + Sync>>,
+{
     #[inline]
     fn unwrap_or_quit(self, err_code: i32, err: &str) -> T {
-        self.unwrap_or_else(
-            |_| {
-                quit_with_error(err_code, err);
-                unreachable!();
-            }
-        )
+        self.unwrap_or_else(|_| {
+            quit_with_error(err_code, err);
+            unreachable!();
+        })
     }
 }
-impl<T,E> UnwrapQuit<T, E> for Option<T> {
+impl<T, E> UnwrapQuit<T, E> for Option<T> {
     #[inline]
-    fn unwrap_or_quit(self, err_code: i32, err: &str) -> T
-    {
-        self.unwrap_or_else(
-            || {
-                quit_with_error(err_code, err);
-                unreachable!();
-            }
-        )
-
+    fn unwrap_or_quit(self, err_code: i32, err: &str) -> T {
+        self.unwrap_or_else(|| {
+            quit_with_error(err_code, err);
+            unreachable!();
+        })
     }
 }
 
