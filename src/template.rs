@@ -23,7 +23,11 @@ pub enum Node {
 type Template = Vec<Node>;
 
 pub fn template_has_vars(path: &Path) -> bool {
-    for line in std::fs::read_to_string(path).unwrap_or_default().lines() {
+    let path = get_absolute_template_path(path).expect("Can't find template");
+    for line in std::fs::read_to_string(path)
+        .expect("Template to check doesn't exist")
+        .lines()
+    {
         if line.contains("{{") && line.contains("}}") {
             return true;
         }
@@ -119,36 +123,50 @@ pub fn read_template(path: &Path) -> io::Result<Template> {
     Ok(result)
 }
 
-pub fn get_template_string_from_path(path: &Path) -> io::Result<String> {
-    fs::read_to_string(path)
-        .or_else(|_| fs::read_to_string(get_config_dir().join(path)))
-        .or_else(|_| fs::read_to_string(get_config_dir().join(path).with_added_extension("tmplr")))
-        .or_else(|_| read_partial_matched_template(path))
-}
-pub(crate) fn read_partial_matched_template(path: &Path) -> io::Result<String> {
-    let input_path = path.to_string_lossy().to_string();
-    let config_dir = get_config_dir();
-    let all_templates = list_templates_relative(&config_dir);
+pub fn get_absolute_template_path(path: &Path) -> io::Result<PathBuf> {
+    if path.exists() {
+        path.canonicalize()
+    } else {
+        let relative_path = get_config_dir().join(path);
+        if relative_path.exists() {
+            relative_path.canonicalize()
+        } else {
+            let relative_path_with_ext = get_config_dir().join(path).with_added_extension("tmplr");
+            if relative_path_with_ext.exists() {
+                relative_path_with_ext.canonicalize()
+            } else {
+                // Try partial matched
+                let input_path = path.to_string_lossy().to_string();
+                let config_dir = get_config_dir();
+                let all_templates = list_templates_relative(&config_dir);
 
-    let mut filtered: Vec<String> = all_templates
-        .into_iter()
-        .map(|p| p.to_string_lossy().to_string())
-        .filter(|pstr| pstr.contains(&input_path))
-        .collect();
+                let mut filtered: Vec<String> = all_templates
+                    .into_iter()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .filter(|pstr| pstr.contains(&input_path))
+                    .collect();
 
-    if filtered.len() > 1 {
-        let mut error_msg = String::new();
-        let _ = writeln!(error_msg, "Multiple templates matched input string");
-        for item in filtered {
-            let _ = writeln!(error_msg, "- {}", item);
+                if filtered.len() > 1 {
+                    let mut error_msg = String::new();
+                    let _ = writeln!(error_msg, "Multiple templates matched input string");
+                    for item in filtered {
+                        let _ = writeln!(error_msg, "- {}", item);
+                    }
+                    return err(&error_msg);
+                }
+                let v = filtered
+                    .pop()
+                    .ok_or_else(|| std::io::Error::other("No match found"))?;
+
+                config_dir.join(v).canonicalize()
+            }
         }
-        return err(&error_msg);
     }
-    let m = filtered
-        .pop()
-        .ok_or_else(|| io::Error::other("Template not found"))?;
-    println!("Expanding: {}", m);
-    fs::read_to_string(config_dir.join(m))
+}
+
+pub fn get_template_string_from_path(path: &Path) -> io::Result<String> {
+    let path = get_absolute_template_path(path)?;
+    fs::read_to_string(path)
 }
 
 pub fn validate_path_string(str_path: &str) -> io::Result<PathBuf> {

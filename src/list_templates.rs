@@ -30,6 +30,7 @@ pub fn fuzzy_select_template() -> Option<PathBuf> {
     let templates_dir = template::templates_dir();
     let templates = list_templates_relative(&templates_dir);
     let templates_str: Vec<&str> = templates.iter().map(|p| p.to_str().unwrap()).collect();
+    dbg!(&templates);
 
     dialoguer::FuzzySelect::new()
         .with_prompt("template")
@@ -37,6 +38,8 @@ pub fn fuzzy_select_template() -> Option<PathBuf> {
         .interact_opt()
         .ok()?
         .map(|s| templates[s].clone())
+        .and_then(|p| p.canonicalize().ok())
+
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
