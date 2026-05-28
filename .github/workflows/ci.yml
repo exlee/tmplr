@@ -38,7 +38,7 @@ jobs:
             cmd: cargo
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -67,7 +67,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           pattern: ${{ env.BIN_NAME }}-*
           merge-multiple: true
