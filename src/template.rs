@@ -23,11 +23,11 @@ pub enum Node {
 type Template = Vec<Node>;
 
 pub fn template_has_vars(path: &Path) -> bool {
-    let path = get_absolute_template_path(path).expect("Can't find template");
-    for line in std::fs::read_to_string(path)
-        .expect("Template to check doesn't exist")
-        .lines()
-    {
+    let content = get_template_string_from_path(path).unwrap_or_else(|err| {
+        quit_with_error(1, &err.to_string());
+        unreachable!();
+    });
+    for line in content.lines() {
         if line.contains("{{") && line.contains("}}") {
             return true;
         }

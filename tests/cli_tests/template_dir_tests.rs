@@ -115,12 +115,28 @@ fn fails_when_multiple_partial_matches() -> TestResult {
         .env("XDG_CONFIG_HOME", template_dir.to_str().unwrap())
         .current_dir(&unroll_dir)
         .assert()
-        .success()
+        .code(1)
         .stderr(predicates::str::contains(
             "Error: Multiple templates matched input string",
         ))
         .stderr(predicates::str::contains("- ex123.tmplr"))
         .stderr(predicates::str::contains("- ex145.tmplr"));
+
+    Ok(())
+}
+#[test]
+fn fails_when_template_is_missing() -> TestResult {
+    let template_dir = assert_fs::TempDir::new()?;
+    let unroll_dir = assert_fs::TempDir::new()?;
+    template_dir.child("tmplr").create_dir_all()?;
+
+    Command::new(COMMAND)
+        .args(["make", "missing"])
+        .env("XDG_CONFIG_HOME", template_dir.path())
+        .current_dir(&unroll_dir)
+        .assert()
+        .code(1)
+        .stderr("Error: No match found\n");
 
     Ok(())
 }
