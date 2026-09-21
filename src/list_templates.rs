@@ -39,7 +39,6 @@ pub fn fuzzy_select_template() -> Option<PathBuf> {
         .ok()?
         .map(|s| templates[s].clone())
         .and_then(|p| p.canonicalize().ok())
-
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]

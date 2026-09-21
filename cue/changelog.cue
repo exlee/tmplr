@@ -5,6 +5,20 @@ import (
 )
 
 changelog: entries: {
+	"0.1.2": {
+		date: "2026-09-21"
+		changed: [
+			"Detect variables in templates resolved from the configuration directory, including partial names and omitted `.tmplr` extensions.",
+			"Exit with an error when template lookup fails or matches multiple templates.",
+			"Show the current version in CLI help.",
+			"Update the test dependency `crossbeam-epoch` to address RUSTSEC-2026-0204.",
+			"Update GitHub Actions checkout and artifact download actions.",
+		]
+	}
+	"0.1.1": {
+		date: "2026-05-25"
+		changed: ["Removed leftover `dbg!` statement from `template_has_vars`"]
+	}
 	"0.1.0": {
 		date: "2026-05-11"
 		added: [

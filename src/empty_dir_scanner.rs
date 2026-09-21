@@ -53,16 +53,14 @@ impl Iterator for EmptyDirScanner {
             }
 
             // New iterator
-            match self.stack.pop() {
-                Some(dir_path) => match fs::read_dir(dir_path.clone()) {
-                    Ok(read_dir) => {
-                        self.current_dir = Some(read_dir);
-                        self.current_path = Some(dir_path);
-                        self.current_empty = true
-                    }
-                    Err(e) => return Some(Err(e)),
-                },
-                None => return None,
+            let dir_path = self.stack.pop()?;
+            match fs::read_dir(dir_path.clone()) {
+                Ok(read_dir) => {
+                    self.current_dir = Some(read_dir);
+                    self.current_path = Some(dir_path);
+                    self.current_empty = true
+                }
+                Err(e) => return Some(Err(e)),
             }
         }
     }

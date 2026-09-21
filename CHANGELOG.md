@@ -1,3 +1,20 @@
+# Changelog
+
+## [Unreleased]
+
+## [v0.1.2] - 2026-09-21
+
+### Fixed
+- Detect variables in templates resolved from the configuration directory, including partial names and omitted `.tmplr` extensions.
+- Exit with an error when template lookup fails or matches multiple templates.
+- Show the current version in CLI help.
+
+### Security
+- Update the test dependency `crossbeam-epoch` to address RUSTSEC-2026-0204.
+
+### Changed
+- Update GitHub Actions checkout and artifact download actions.
+
 ## [v0.1.1] - 2026-05-25
 
 ### Changed

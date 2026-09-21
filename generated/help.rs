@@ -1,5 +1,5 @@
 const HELP: &str = "
-tmplr (v0.1.0)
+tmplr (v0.1.2)
 
 	https://github.com/exlee/tmplr
 	A simple template instantiation utility.

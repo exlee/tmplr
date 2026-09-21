@@ -77,12 +77,10 @@ impl Iterator for FileScanner {
             }
 
             // New iterator
-            match self.stack.pop() {
-                Some(dir_path) => match fs::read_dir(dir_path) {
-                    Ok(read_dir) => self.current_dir = Some(read_dir),
-                    Err(e) => return Some(Err(e)),
-                },
-                None => return None,
+            let dir_path = self.stack.pop()?;
+            match fs::read_dir(dir_path) {
+                Ok(read_dir) => self.current_dir = Some(read_dir),
+                Err(e) => return Some(Err(e)),
             }
         }
     }
